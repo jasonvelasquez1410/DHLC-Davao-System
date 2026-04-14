@@ -4,7 +4,7 @@ import { auth, db } from '../lib/firebase';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { useAuth } from '../App';
-import { Mail, Lock, ArrowRight, ShieldCheck, Facebook } from 'lucide-react';
+import { Mail, Lock, ArrowRight, ShieldCheck } from 'lucide-react';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -94,7 +94,7 @@ const Login = () => {
               <ShieldCheck size={16} color="var(--primary)" /> Encrypted Connection
             </div>
             <a href="https://www.facebook.com/dhlcdavaocity" target="_blank" rel="noreferrer" style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center', color: 'var(--text-dim)', fontSize: '0.85rem', textDecoration: 'none' }}>
-              <Facebook size={16} /> Need help? Visit our FB Page
+              Need help? Visit our FB Page
             </a>
           </div>
         </div>

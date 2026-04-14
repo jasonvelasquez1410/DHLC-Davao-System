@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { CheckCircle, Users, QrCode, Shield, Facebook, ArrowRight } from 'lucide-react';
+import { CheckCircle, Users, QrCode, Shield, ArrowRight } from 'lucide-react';
 
 const LandingPage = () => {
   return (
@@ -26,7 +26,7 @@ const LandingPage = () => {
                 Join the Service <ArrowRight size={20} />
               </Link>
               <a href="https://www.facebook.com/dhlcdavaocity" target="_blank" rel="noreferrer" className="btn-ghost" style={{ padding: '1rem 2.5rem', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <Facebook size={20} /> Latest News
+                Latest News
               </a>
             </div>
           </div>
@@ -96,7 +96,7 @@ const LandingPage = () => {
                 Join our vibrant online community on Facebook for daily devotions, live-streamed services, and community updates.
               </p>
               <a href="https://www.facebook.com/dhlcdavaocity" target="_blank" rel="noreferrer" className="btn-primary" style={{ background: '#1877F2', color: 'white' }}>
-                <Facebook size={20} /> Visit Our Facebook Page
+                Visit Our Facebook Page
               </a>
             </div>
             <div style={{ display: 'flex', gap: '1rem' }}>
