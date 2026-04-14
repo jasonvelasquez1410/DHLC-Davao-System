@@ -1,11 +1,12 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, Link } from 'react-router-dom';
-import { LogOut, LayoutDashboard, User, Scan, Users, Menu, X, Globe, LogIn } from 'lucide-react';
+import { LogOut, LayoutDashboard, User, Scan, Users, Menu, X, Globe, LogIn, MessageSquare } from 'lucide-react';
 import LandingPage from './pages/LandingPage';
 import Login from './pages/Login';
 import AdminDashboard from './pages/AdminDashboard';
 import LeaderPortal from './pages/LeaderPortal';
 import MemberDashboard from './pages/MemberDashboard';
+import Discuss from './pages/Discuss';
 
 import { auth, db } from './lib/firebase';
 import { onAuthStateChanged, signOut as firebaseSignOut } from 'firebase/auth';
@@ -68,7 +69,10 @@ export const useAuth = () => useContext(AuthContext);
 const ProtectedRoute = ({ children, role }) => {
   const { user } = useAuth();
   if (!user) return <Navigate to="/login" />;
-  if (role && user.role !== role) return <Navigate to="/" />;
+  if (role && user.role !== role) {
+     if (user.role === 'admin' || user.role === 'leader') return children; // Allow elevated roles to see lower role areas
+     return <Navigate to="/" />;
+  }
   return children;
 };
 
@@ -94,6 +98,9 @@ const Navbar = () => {
         <Link to="/" className="nav-link">Home</Link>
         {user ? (
           <>
+            <Link to="/discuss" className="nav-link" style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+              <MessageSquare size={16} /> Discuss
+            </Link>
             {user.role === 'admin' && <Link to="/admin" className="nav-link">Admin Panel</Link>}
             {user.role === 'leader' && <Link to="/leader" className="nav-link">Leader Portal</Link>}
             {user.role === 'member' && <Link to="/member" className="nav-link">Account</Link>}
@@ -119,6 +126,11 @@ function App() {
         <Routes>
           <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/discuss" element={
+            <ProtectedRoute>
+              <Discuss />
+            </ProtectedRoute>
+          } />
           <Route path="/admin" element={
             <ProtectedRoute role="admin">
               <AdminDashboard />

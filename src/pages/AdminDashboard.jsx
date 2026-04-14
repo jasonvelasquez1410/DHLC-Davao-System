@@ -8,6 +8,14 @@ import {
 } from 'lucide-react';
 import { Html5QrcodeScanner } from 'html5-qrcode';
 
+const ministersList = [
+  "Deacon Joselito Tolentino", "Deacon Andre J Bughao", "Deacon Azaniah Esther Bughao",
+  "Kirstine Irish Canlapan", "Alex Ruelan Jr.", "Niño Villarta", "Camyr Anrie Gelicame",
+  "Justyne Olive Dayon", "Le Joshua Guzman", "Anjie Lenard Bacanaya", "Mariz Jenne Villarta",
+  "Jenny Eve Canlapan", "April Joyce Dayon", "Liza Degamo", "Aleiah Lyka Degamo",
+  "Mary Ann Torres", "Jay Mar Turno"
+];
+
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('scanner');
   const [members, setMembers] = useState([]);
