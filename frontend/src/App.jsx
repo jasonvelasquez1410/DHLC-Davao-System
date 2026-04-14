@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, Link } from 'react-router-dom';
-import { LogOut, LayoutDashboard, User, QrCode, Scan, Users, FileText, Menu, X } from 'lucide-react';
+import { LogOut, LayoutDashboard, User, Scan, Users, Menu, X, Globe, LogIn } from 'lucide-react';
 import LandingPage from './pages/LandingPage';
 import Login from './pages/Login';
 import AdminDashboard from './pages/AdminDashboard';
@@ -26,7 +26,8 @@ export const AuthProvider = ({ children }) => {
         if (userDoc.exists()) {
           setUser({ uid: firebaseUser.uid, ...userDoc.data() });
         } else {
-          setUser({ uid: firebaseUser.uid, email: firebaseUser.email, role: 'member' });
+          // Default for new users without document yet
+          setUser({ uid: firebaseUser.uid, email: firebaseUser.email, role: 'member', name: firebaseUser.displayName || 'Member' });
         }
       } else {
         setUser(null);
@@ -42,10 +43,17 @@ export const AuthProvider = ({ children }) => {
 
   const logout = async () => {
     await firebaseSignOut(auth);
-    setUser(null);
+    window.location.href = '/';
   };
 
-  if (loading) return <div className="hero">Loading Secure Portal...</div>;
+  if (loading) return (
+    <div className="hero" style={{ justifyContent: 'center', textAlign: 'center' }}>
+      <div className="animate-fade-in">
+        <img src="/logo.jpg" alt="DHLC LOGO" style={{ width: '120px', borderRadius: '50%', marginBottom: '20px' }} />
+        <h2 className="text-gradient">Initializing Secure Portal...</h2>
+      </div>
+    </div>
+  );
 
   return (
     <AuthContext.Provider value={{ user, login, logout }}>
@@ -67,24 +75,36 @@ const ProtectedRoute = ({ children, role }) => {
 // --- Navbar Component ---
 const Navbar = () => {
   const { user, logout } = useAuth();
-  const [isOpen, setIsOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => setScrolled(window.scrollY > 20);
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   return (
-    <nav className="glass-nav">
-      <Link to="/" className="logo">DHLC DAVAO CITY</Link>
+    <nav className="glass-nav" style={{ padding: scrolled ? '0.8rem 5%' : '1.5rem 5%', background: scrolled ? 'rgba(0, 18, 38, 0.95)' : 'rgba(0, 18, 38, 0.7)' }}>
+      <Link to="/" className="logo">
+        <img src="/logo.jpg" alt="Logo" style={{ width: '40px', height: '40px', borderRadius: '50%' }} />
+        <span className="font-serif">DHLC <span className="logo-accent">DAVAO</span></span>
+      </Link>
       
       <div className="nav-links">
+        <Link to="/" className="nav-link">Home</Link>
         {user ? (
-          <div style={{ display: 'flex', gap: '2rem', alignItems: 'center' }}>
-            {user.role === 'admin' && <Link to="/admin" className="btn-text">Admin</Link>}
-            {user.role === 'leader' && <Link to="/leader" className="btn-text">Leader Portal</Link>}
-            {user.role === 'member' && <Link to="/member" className="btn-text">My QR</Link>}
-            <button onClick={logout} className="btn-primary" style={{ padding: '0.5rem 1rem' }}>
-              <LogOut size={18} /> Logout
+          <>
+            {user.role === 'admin' && <Link to="/admin" className="nav-link">Admin Panel</Link>}
+            {user.role === 'leader' && <Link to="/leader" className="nav-link">Leader Portal</Link>}
+            {user.role === 'member' && <Link to="/member" className="nav-link">Account</Link>}
+            <button onClick={logout} className="btn-primary" style={{ padding: '0.6rem 1.2rem', fontSize: '0.9rem' }}>
+              <LogOut size={16} /> Logout
             </button>
-          </div>
+          </>
         ) : (
-          <Link to="/login" className="btn-primary">Get Started</Link>
+          <Link to="/login" className="btn-primary" style={{ padding: '0.6rem 1.2rem' }}>
+            <LogIn size={16} /> Login
+          </Link>
         )}
       </div>
     </nav>

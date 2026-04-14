@@ -1,17 +1,30 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Playfair+Display:ital,wght@0,700;1,700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap');
 
 :root {
-  --primary: #F29900; /* Golden Yellow */
-  --secondary: #002D62; /* Navy Blue */
+  /* Brand Colors from DHLC Facebook */
+  --primary: #F29900; /* Gold */
   --primary-glow: rgba(242, 153, 0, 0.4);
-  --secondary-glow: rgba(0, 45, 98, 0.4);
-  --bg-dark: #001529; /* Dark Navy Base */
-  --bg-card: rgba(0, 45, 98, 0.5);
-  --text-main: #f4f4f4;
-  --text-dim: #b0c4de;
-  --glass: rgba(255, 255, 255, 0.05);
-  --glass-border: rgba(255, 255, 255, 0.1);
-  --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --secondary: #002D62; /* Navy Blue */
+  --accent: #E5E7EB;
+  
+  /* Backgrounds */
+  --bg-dark: #001226; /* Deeper Navy */
+  --bg-darker: #000914;
+  --glass: rgba(255, 255, 255, 0.03);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-heavy: rgba(255, 255, 255, 0.07);
+  
+  /* Typography */
+  --text-main: #FFFFFF;
+  --text-dim: #94A3B8;
+  --font-heading: 'Playfair Display', serif;
+  --font-body: 'Outfit', sans-serif;
+  
+  /* Spacing & Radii */
+  --radius-lg: 24px;
+  --radius-md: 16px;
+  --radius-sm: 8px;
+  --padding-page: 5%;
 }
 
 * {
@@ -21,90 +34,178 @@
 }
 
 body {
-  font-family: 'Outfit', sans-serif;
+  font-family: var(--font-body);
   background-color: var(--bg-dark);
   color: var(--text-main);
   line-height: 1.6;
   overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
 }
 
-h1, h2, h3 {
-  font-family: 'Playfair Display', serif;
+h1, h2, h3, h4 {
+  font-family: var(--font-body);
   font-weight: 700;
+  letter-spacing: -0.02em;
 }
 
+.font-serif {
+  font-family: var(--font-heading);
+}
+
+/* Layout Utilities */
+.container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 var(--padding-page);
+}
+
+.section {
+  padding: 100px 0;
+}
+
+/* Glassmorphism Components */
 .premium-card {
-  background: var(--bg-card);
-  backdrop-filter: blur(12px);
+  background: var(--glass);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   border: 1px solid var(--glass-border);
-  border-radius: 20px;
-  padding: 2rem;
-  transition: var(--transition);
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  border-radius: var(--radius-lg);
+  padding: 2.5rem;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
 }
 
 .premium-card:hover {
-  border-color: var(--primary);
-  transform: translateY(-5px);
-  box-shadow: 0 12px 40px 0 rgba(212, 175, 55, 0.15);
+  transform: translateY(-8px);
+  background: var(--glass-heavy);
+  border-color: rgba(242, 153, 0, 0.3);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
 }
 
-.btn-primary {
-  background: linear-gradient(135deg, var(--primary), #b8860b);
-  color: black;
-  border: none;
-  padding: 0.8rem 1.5rem;
-  border-radius: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: var(--transition);
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  text-decoration: none;
+.premium-card::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle at top right, rgba(242, 153, 0, 0.05), transparent);
+  pointer-events: none;
 }
 
-.btn-primary:hover {
-  transform: scale(1.05);
-  box-shadow: 0 0 20px var(--primary-glow);
-}
-
+/* Navigation */
 .glass-nav {
   position: fixed;
   top: 0;
+  left: 0;
   width: 100%;
-  padding: 1.5rem 5%;
-  background: rgba(15, 17, 21, 0.8);
-  backdrop-filter: blur(10px);
   z-index: 1000;
+  background: rgba(0, 18, 38, 0.7);
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+  border-bottom: 1px solid var(--glass-border);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-bottom: 1px solid var(--glass-border);
+  padding: 1.2rem var(--padding-page);
+  transition: all 0.3s ease;
 }
 
 .logo {
-  font-family: 'Playfair Display', serif;
-  font-size: 1.5rem;
-  color: var(--primary);
+  font-family: var(--font-body);
+  font-weight: 800;
+  font-size: 1.4rem;
+  color: white;
   text-decoration: none;
-  letter-spacing: 2px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
-.container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 2rem;
+.logo-accent {
+  color: var(--primary);
 }
 
+.nav-links {
+  display: flex;
+  gap: 2.5rem;
+  align-items: center;
+}
+
+.nav-link {
+  color: var(--text-dim);
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 0.95rem;
+  transition: color 0.3s;
+}
+
+.nav-link:hover {
+  color: var(--primary);
+}
+
+/* Buttons */
+.btn-primary {
+  background: var(--primary);
+  color: #000;
+  border: none;
+  padding: 0.8rem 1.8rem;
+  border-radius: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  transition: all 0.3s;
+  box-shadow: 0 4px 15px var(--primary-glow);
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px var(--primary-glow);
+  filter: brightness(1.1);
+}
+
+.btn-ghost {
+  background: transparent;
+  border: 1px solid var(--glass-border);
+  color: white;
+  padding: 0.8rem 1.8rem;
+  border-radius: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.3s;
+}
+
+.btn-ghost:hover {
+  background: var(--glass);
+  border-color: white;
+}
+
+/* Hero Section */
 .hero {
   min-height: 100vh;
   display: flex;
   align-items: center;
-  justify-content: center;
-  text-align: center;
-  background: radial-gradient(circle at center, rgba(212, 175, 55, 0.05) 0%, transparent 70%);
+  position: relative;
   padding-top: 80px;
+  background: radial-gradient(circle at 10% 20%, rgba(0, 45, 98, 0.4) 0%, transparent 50%),
+              radial-gradient(circle at 90% 80%, rgba(242, 153, 0, 0.05) 0%, transparent 40%);
+}
+
+.hero-title {
+  font-size: clamp(3rem, 8vw, 5.5rem);
+  line-height: 1.1;
+  margin-bottom: 2rem;
+}
+
+.text-gradient {
+  background: linear-gradient(135deg, #FFF 0%, var(--primary) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 /* Animations */
@@ -117,10 +218,65 @@ h1, h2, h3 {
   animation: fadeIn 0.8s ease forwards;
 }
 
-/* PWA Styles */
-#pwa-install-btn {
+/* Attendance Confirmation Styles */
+.confirmation-overlay {
   position: fixed;
-  bottom: 2rem;
-  right: 2rem;
-  z-index: 999;
+  inset: 0;
+  background: rgba(0,0,0,0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  backdrop-filter: blur(10px);
+}
+
+.checkmark-circle {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background: #4caf50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  margin-bottom: 1rem;
+  box-shadow: 0 0 30px rgba(76, 175, 80, 0.5);
+}
+
+/* Tables */
+table {
+  width: 100%;
+}
+
+th {
+  font-weight: 600;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+  padding: 1.2rem;
+}
+
+td {
+  padding: 1.5rem 1.2rem;
+  border-top: 1px solid var(--glass-border);
+}
+
+/* QR Code Container */
+.qr-container {
+  background: white;
+  padding: 2rem;
+  border-radius: var(--radius-md);
+  display: inline-block;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .nav-links {
+    display: none;
+  }
+  .section {
+    padding: 60px 0;
+  }
 }

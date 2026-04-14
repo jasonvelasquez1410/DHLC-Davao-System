@@ -1,84 +1,141 @@
+import React, { useState, useEffect } from 'react';
 import { db } from '../lib/firebase';
 import { collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
+import { useAuth } from '../App';
+import { QRCodeSVG } from 'qrcode.react';
+import { User, Mail, Award, Calendar, ExternalLink, QrCode } from 'lucide-react';
 
 const MemberDashboard = () => {
   const { user } = useAuth();
   const [history, setHistory] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchHistory = async () => {
-      const q = query(
-        collection(db, 'attendance'), 
-        where('userId', '==', user.uid),
-        orderBy('timestamp', 'desc'),
-        limit(5)
-      );
-      const snap = await getDocs(q);
-      setHistory(snap.docs.map(doc => doc.data()));
+      try {
+        const q = query(
+          collection(db, 'attendance'), 
+          where('userId', '==', user.uid),
+          orderBy('timestamp', 'desc'),
+          limit(10)
+        );
+        const snap = await getDocs(q);
+        setHistory(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+        setLoading(false);
+      } catch (err) {
+        console.error(err);
+        setLoading(false);
+      }
     };
     if (user?.uid) fetchHistory();
   }, [user?.uid]);
 
   return (
-    <div className="container" style={{ paddingTop: '120px', paddingBottom: '40px' }}>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}>
-        
-        {/* Left: Profile Info */}
-        <div className="premium-card">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', marginBottom: '2rem' }}>
-            <div style={{ width: '80px', height: '80px', borderRadius: '50%', background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'black' }}>
-              <User size={40} />
-            </div>
-            <div>
-              <h2 style={{ fontSize: '1.8rem' }}>{user.name}</h2>
-              <p style={{ color: 'var(--primary)', fontWeight: '600' }}>Member</p>
-            </div>
+    <div className="container" style={{ paddingTop: '120px', paddingBottom: '60px' }}>
+      <div className="animate-fade-in">
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '3rem' }}>
+          <div>
+            <h1 className="font-serif" style={{ fontSize: '3rem' }}>Member <span className="text-gradient">Portal</span></h1>
+            <p style={{ color: 'var(--text-dim)' }}>Welcome back, {user.name}. Your spiritual journey is our priority.</p>
           </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', color: 'var(--text-dim)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
-              <Mail size={18} /> {user.email}
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
-              <Award size={18} /> Group: {user.groupId || 'Assigned soon'}
-            </div>
+          <div style={{ padding: '0.8rem 1.5rem', background: 'var(--glass)', borderRadius: '15px', border: '1px solid var(--glass-border)' }}>
+             <span style={{ color: 'var(--primary)', fontWeight: 'bold' }}>Status: Active Member</span>
           </div>
         </div>
 
-        {/* Right: QR Code for Attendance */}
-        <div className="premium-card" style={{ textAlign: 'center' }}>
-          <h3 style={{ marginBottom: '1.5rem' }}>Your Attendance QR</h3>
-          <div style={{ background: 'white', padding: '1.5rem', borderRadius: '15px', display: 'inline-block', boxShadow: '0 0 20px var(--primary-glow)' }}>
-            <QRCodeSVG 
-              value={user.qrId} 
-              size={200}
-              level="H"
-              includeMargin={true}
-            />
-          </div>
-          <p style={{ marginTop: '1.5rem', color: 'var(--text-dim)', fontSize: '0.9rem' }}>
-            Present this code to the usher when you arrive at church for automatic attendance check-in.
-          </p>
-        </div>
-
-      </div>
-
-      {/* Attendance History (Mock) */}
-      <div className="premium-card" style={{ marginTop: '2rem' }}>
-        <h3 style={{ marginBottom: '1.5rem' }}>Recent Attendance</h3>
-        <div style={{ borderTop: '1px solid var(--glass-border)' }}>
-          {[1, 2, 3].map((_, i) => (
-            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '1.2rem 0', borderBottom: '1px solid var(--glass-border)' }}>
-              <div>
-                <p style={{ fontWeight: '600' }}>Sunday Morning Service</p>
-                <p style={{ fontSize: '0.8rem', color: 'var(--text-dim)' }}>Main Sanctuary</p>
+        <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '2rem' }}>
+          
+          {/* Profile Section */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+            <div className="premium-card">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '2rem', marginBottom: '2.5rem' }}>
+                <div style={{ width: '100px', height: '100px', borderRadius: '50%', background: 'linear-gradient(135deg, var(--secondary), var(--bg-dark))', border: '2px solid var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)', boxShadow: '0 0 20px var(--primary-glow)' }}>
+                  <User size={50} />
+                </div>
+                <div>
+                  <h2 style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>{user.name}</h2>
+                  <p style={{ color: 'var(--text-dim)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <Mail size={16} /> {user.email}
+                  </p>
+                </div>
               </div>
-              <div style={{ textAlign: 'right' }}>
-                <p style={{ color: '#4caf50', fontWeight: 'bold' }}>CHECKED IN</p>
-                <p style={{ fontSize: '0.8rem', color: 'var(--text-dim)' }}>Apr {10 - i}, 2026</p>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+                <div style={{ padding: '1.5rem', background: 'rgba(255,255,255,0.02)', borderRadius: '15px', border: '1px solid var(--glass-border)' }}>
+                  <p style={{ fontSize: '0.8rem', color: 'var(--text-dim)', marginBottom: '0.5rem' }}>CELL GROUP</p>
+                  <h4 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <Users size={18} color="var(--primary)" /> {user.groupId || 'Assigning...'}
+                  </h4>
+                </div>
+                <div style={{ padding: '1.5rem', background: 'rgba(255,255,255,0.02)', borderRadius: '15px', border: '1px solid var(--glass-border)' }}>
+                  <p style={{ fontSize: '0.8rem', color: 'var(--text-dim)', marginBottom: '0.5rem' }}>MEMBER SINCE</p>
+                  <h4 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <Calendar size={18} color="var(--primary)" /> 2024
+                  </h4>
+                </div>
               </div>
             </div>
-          ))}
+
+            <div className="premium-card">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+                <h3>Recent Attendance</h3>
+                <Link to="#" style={{ color: 'var(--primary)', fontSize: '0.9rem', textDecoration: 'none' }}>View All</Link>
+              </div>
+              
+              {history.length > 0 ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  {history.map((record) => (
+                    <div key={record.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '1rem', background: 'rgba(255,255,255,0.01)', borderRadius: '12px', border: '1px solid var(--glass-border)' }}>
+                      <div>
+                        <p style={{ fontWeight: '600' }}>{record.service || 'Sunday Service'}</p>
+                        <p style={{ fontSize: '0.8rem', color: 'var(--text-dim)' }}>Checked in by Church Admin</p>
+                      </div>
+                      <div style={{ textAlign: 'right' }}>
+                        <p style={{ color: '#4caf50', fontSize: '0.8rem', fontWeight: 'bold' }}>SUCCESS</p>
+                        <p style={{ fontSize: '0.8rem', color: 'var(--text-dim)' }}>{record.timestamp?.toDate().toLocaleDateString()}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-dim)' }}>
+                  No attendance records found yet.
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* QR Code Section */}
+          <div className="premium-card" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
+            <div style={{ marginBottom: '2rem' }}>
+              <div style={{ display: 'inline-flex', padding: '1rem', background: 'rgba(242, 153, 0, 0.1)', borderRadius: '50%', color: 'var(--primary)', marginBottom: '1rem' }}>
+                <QrCode size={32} />
+              </div>
+              <h2 className="font-serif">Attendance QR</h2>
+              <p style={{ color: 'var(--text-dim)', fontSize: '0.9rem', maxWidth: '300px', margin: '1rem auto' }}>
+                Scan this code at the usher's station when you enter the church.
+              </p>
+            </div>
+
+            <div className="qr-container">
+              <QRCodeSVG 
+                value={user.uid} // Using UID as the QR identifier
+                size={220}
+                level="H"
+                marginSize={4}
+                fgColor="#001226"
+              />
+            </div>
+
+            <div style={{ marginTop: '2rem', width: '100%', padding: '1rem', background: 'rgba(255,255,255,0.02)', borderRadius: '10px', fontSize: '0.8rem', color: 'var(--text-dim)' }}>
+              Unique ID: {user.uid.substring(0, 10)}...
+            </div>
+            
+            <button className="btn-primary" style={{ marginTop: '2rem', width: '100%', justifyContent: 'center' }} onClick={() => window.print()}>
+               Print My QR Code
+            </button>
+          </div>
+
         </div>
       </div>
     </div>
