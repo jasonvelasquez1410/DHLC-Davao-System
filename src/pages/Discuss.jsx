@@ -7,16 +7,16 @@ import {
   MoreVertical, Phone, Paperclip, Smile 
 } from 'lucide-react';
 
+// Helper for Lucide icons that might be missing (Defined BEFORE use)
+const ShieldCheckIcon = (props) => (
+  <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
+);
+
 const channels = [
   { id: 'general', name: 'General', icon: Hash, roles: ['admin', 'leader', 'member'] },
   { id: 'leadership', name: 'Ministers & Leaders', icon: ShieldCheckIcon, roles: ['admin', 'leader'] },
   { id: 'announcements', name: 'Pastoral Announcements', icon: MessageSquare, roles: ['admin'] }
 ];
-
-// Helper for Lucide icons that might be missing
-const ShieldCheckIcon = (props) => (
-  <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
-);
 
 const Discuss = () => {
   const { user } = useAuth();
@@ -98,10 +98,10 @@ const Discuss = () => {
           </div>
         </div>
 
-        <div style={{ marginTop: 'auto' }}>
+        <div style={{ gap: '1rem', display: 'flex', flexDirection: 'column', marginTop: 'auto' }}>
            <div className="premium-card" style={{ padding: '1rem', background: 'rgba(242, 153, 0, 0.05)' }}>
-              <p style={{ fontSize: '0.8rem', color: 'var(--text-dim)' }}>Ministry Roster</p>
-              <p style={{ fontSize: '0.9rem', fontWeight: 'bold' }}>18 Ministers Online</p>
+              <p style={{ fontSize: '0.8rem', color: 'var(--text-dim)' }}>Authenticated as:</p>
+              <p style={{ fontSize: '0.9rem', fontWeight: 'bold' }}>{user.name}</p>
            </div>
         </div>
       </aside>
@@ -137,13 +137,13 @@ const Discuss = () => {
               <div className="message-info">
                 <span style={{ fontWeight: 700, color: msg.senderId === user.uid ? 'var(--primary)' : 'white' }}>{msg.senderName}</span>
                 <span style={{ color: 'var(--text-dim)', fontSize: '0.7rem' }}>
-                  {msg.createdAt?.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  {msg.createdAt?.toDate ? msg.createdAt.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Just now'}
                 </span>
               </div>
               <div style={{ fontSize: '0.95rem' }}>
                 {msg.isCall ? (
-                  <a href={msg.text.split(': ')[1]} target="_blank" rel="noreferrer" style={{ color: 'var(--primary)', fontWeight: 'bold' }}>
-                    JOIN VIDEO CALL NOW
+                  <a href={msg.text.split(': ')[1]} target="_blank" rel="noreferrer" style={{ color: 'var(--primary)', fontWeight: 'bold', textDecoration: 'none' }}>
+                    🚀 JOIN VIDEO CALL NOW
                   </a>
                 ) : msg.text}
               </div>
