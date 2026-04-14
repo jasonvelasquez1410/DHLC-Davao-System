@@ -34,21 +34,18 @@ const firebaseConfig = {
 ## 🛠️ Pending Steps (Resume Here)
 
 ### 1. GitHub Link & Push
-- [ ] Create a new repository on GitHub (Public or Private).
-- [ ] Run the following in terminal:
-  ```powershell
-  git remote add origin [YOUR_REPO_URL]
-  git push -u origin master
-  ```
+- [x] Create a new repository on GitHub (Public or Private).
+- [x] Link local repository and push changes.
 
-### 2. Vercel Deployment
-- [ ] Log in to Vercel.com.
-- [ ] Connect the GitHub repository.
-- [ ] Deploy! (Routing is already configured in `vercel.json`).
+### 2. Deployment (Vercel/Netlify)
+- [ ] Connect the GitHub repository to your preferred host.
+- [ ] **Important**: Set the **Root Directory** to `frontend`.
+- [ ] The `vercel.json` and build scripts are already configured.
 
 ### 3. First Admin Activation
 - [ ] Create a user in **Firebase Auth**.
 - [ ] Create a corresponding document in **Firestore** (`users` collection) using the User's UID to grant the `admin` role.
+
 
 ---
 
