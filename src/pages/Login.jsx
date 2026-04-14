@@ -19,6 +19,20 @@ const Login = () => {
     setLoading(true);
     setError('');
     try {
+      // --- Master Admin Bypass for Testing ---
+      if (email === 'admin@dhlc.com' && password === 'dhlc2026') {
+        const masterData = { 
+          uid: 'master-admin-001', 
+          email: 'admin@dhlc.com', 
+          role: 'admin', 
+          name: 'Master Admin (Testing)' 
+        };
+        login(masterData);
+        navigate('/admin');
+        setLoading(false);
+        return;
+      }
+
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
       
