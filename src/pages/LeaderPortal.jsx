@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../lib/firebase';
-import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, getDoc, setDoc } from 'firebase/firestore';
 import { useAuth } from '../App';
 import { 
   Users, TrendingUp, Award, UserPlus, 
@@ -13,6 +13,12 @@ const LeaderPortal = () => {
   const { user } = useAuth();
   const [group, setGroup] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [editingProfile, setEditingProfile] = useState(false);
+  const [profileData, setProfileData] = useState({
+    name: user.name || '',
+    phone: user.phone || '',
+    family: user.family || ''
+  });
 
   useEffect(() => {
     const fetchGroup = async () => {
@@ -66,6 +72,68 @@ const LeaderPortal = () => {
             <p style={{ color: 'var(--text-dim)' }}>Equipping you to lead the {group?.name || 'Assigned'} cell group with excellence.</p>
           </div>
           <button className="btn-primary"><UserPlus size={18} /> Add Member</button>
+        </div>
+
+        {/* Profile Update Block */}
+        <div className="premium-card" style={{ marginBottom: '2rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+            <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Users size={20} color="var(--primary)" /> Minister Profile Info
+            </h3>
+            {!editingProfile && (
+              <button className="btn-ghost" onClick={() => setEditingProfile(true)} style={{ padding: '0.5rem 1rem', fontSize: '0.9rem' }}>
+                ✏️ Edit Details
+              </button>
+            )}
+          </div>
+
+          {editingProfile ? (
+            <form onSubmit={async (e) => {
+              e.preventDefault();
+              try {
+                const userRef = doc(db, 'users', user.uid);
+                await setDoc(userRef, profileData, { merge: true });
+                setEditingProfile(false);
+                alert("Minister profile updated successfully.");
+              } catch (err) {
+                alert("Failed to update profile.");
+              }
+            }} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                <div>
+                  <label style={{ fontSize: '0.8rem', color: 'var(--text-dim)', marginBottom: '0.3rem', display: 'block' }}>Official Full Name</label>
+                  <input type="text" value={profileData.name} onChange={(e) => setProfileData({...profileData, name: e.target.value})} style={{ width: '100%', padding: '0.8rem', background: 'var(--glass)', border: '1px solid var(--glass-border)', color: 'white', borderRadius: '8px' }} required />
+                </div>
+                <div>
+                  <label style={{ fontSize: '0.8rem', color: 'var(--text-dim)', marginBottom: '0.3rem', display: 'block' }}>Contact Number</label>
+                  <input type="tel" value={profileData.phone} onChange={(e) => setProfileData({...profileData, phone: e.target.value})} placeholder="09XX-XXX-XXXX" style={{ width: '100%', padding: '0.8rem', background: 'var(--glass)', border: '1px solid var(--glass-border)', color: 'white', borderRadius: '8px' }} required />
+                </div>
+                <div style={{ gridColumn: '1 / -1' }}>
+                  <label style={{ fontSize: '0.8rem', color: 'var(--text-dim)', marginBottom: '0.3rem', display: 'block' }}>Family Household Name</label>
+                  <input type="text" value={profileData.family} onChange={(e) => setProfileData({...profileData, family: e.target.value})} placeholder="e.g. Ebana Family" style={{ width: '100%', padding: '0.8rem', background: 'var(--glass)', border: '1px solid var(--glass-border)', color: 'white', borderRadius: '8px' }} />
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
+                 <button type="submit" className="btn-primary" style={{ padding: '0.6rem 1.5rem' }}>Save Changes</button>
+                 <button type="button" className="btn-ghost" onClick={() => setEditingProfile(false)} style={{ padding: '0.6rem 1.5rem' }}>Cancel</button>
+              </div>
+            </form>
+          ) : (
+            <div style={{ display: 'flex', gap: '3rem', flexWrap: 'wrap' }}>
+               <div>
+                 <p style={{ fontSize: '0.8rem', color: 'var(--text-dim)' }}>Name</p>
+                 <p style={{ fontWeight: 'bold' }}>{profileData.name || 'Not set'}</p>
+               </div>
+               <div>
+                 <p style={{ fontSize: '0.8rem', color: 'var(--text-dim)' }}>Contact Number</p>
+                 <p style={{ fontWeight: 'bold' }}>{profileData.phone || 'Not provided'}</p>
+               </div>
+               <div>
+                 <p style={{ fontSize: '0.8rem', color: 'var(--text-dim)' }}>Household</p>
+                 <p style={{ fontWeight: 'bold' }}>{profileData.family || 'Not specified'}</p>
+               </div>
+            </div>
+          )}
         </div>
 
         {/* Stats Grid */}
