@@ -43,6 +43,7 @@ const Login = () => {
       name: name,
       email: user.email,
       role: role,
+      photoURL: user.photoURL || null,
       lastLogin: serverTimestamp()
     };
 
