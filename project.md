@@ -57,3 +57,36 @@ const firebaseConfig = {
 - **Last Action**: Completed all phases including Database backups setup!
 - **Context**: Project effectively reached 1.0 Milestone functionality.
 - **Tools**: Vite, React, Node.js, Vercel, and Firebase Admin.
+60: 
+61: ---
+62: 
+63: ## 🚀 Launch Instructions (Messenger Template)
+64: 
+65: **Recipient**: Pastor Glenn Ebana
+66: 
+67: Blessed day, Pastor Glenn! 🙌 The **DHLC Davao Church System** is officially live and ready for testing! 🚀
+68: 
+69: **System URL**: `[INSERT YOUR NEW DOMAIN URL HERE]`
+70: 
+71: ---
+72: 
+73: **👑 FOR YOU & PASTOR GLADYS:**
+74: Simply click **"Sign in with Google"** using your registered Gmail. The system will recognize you immediately and open your personalized **Command Center** with your specific greetings!
+75: 
+76: ---
+77: 
+78: **📋 INSTRUCTIONS FOR MINISTERS:**
+79: Please ask the ministers to login and do these 3 quick steps:
+80: 
+81: 1️⃣ **Google Login**: Use any personal Gmail to sign in.
+82: 2️⃣ **Update Profile**: Click **"Edit Profile"** at the top to input their *Official Full Name* and *Family Name*. This builds our church directory! 📖
+83: 3️⃣ **Save QR Code**: Tap **"Save as Image"** under their QR code. They should keep this image in their phone gallery to show the ushers this Sunday for check-in. ✅
+84: 
+85: ---
+86: 
+87: **✨ KEY FEATURES TO EXPLORE:**
+88: 💬 **Discuss Module**: Private chat and video calling for church leadership (top right menu).
+89: 📲 **Attendance Scanner**: Ushers can use the Admin Hub to scan QR images at the door instantly.
+90: 📢 **Live Announcements**: Our church Facebook feed is now live on the website's front page! 
+91: 
+92: To God be the glory! Please let me know if you need any adjustments as you explore the portal. 🙏
