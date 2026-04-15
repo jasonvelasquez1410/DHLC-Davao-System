@@ -86,21 +86,40 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* Facebook Link Section */}
-      <section className="section">
+      {/* Facebook Feed Section */}
+      <section className="section" id="announcements">
         <div className="container">
-          <div className="premium-card" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4rem', background: 'linear-gradient(135deg, rgba(0, 45, 98, 0.5), rgba(0, 0, 0, 0.8))' }}>
-            <div style={{ maxWidth: '600px' }}>
-              <h2 className="font-serif" style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>Stay Connected.</h2>
-              <p style={{ color: 'var(--text-dim)', fontSize: '1.1rem', marginBottom: '2rem' }}>
-                Join our vibrant online community on Facebook for daily devotions, live-streamed services, and community updates.
+          <div className="premium-card" style={{ display: 'flex', flexDirection: 'row', flexWrap: 'wrap', gap: '4rem', padding: '4rem', background: 'linear-gradient(135deg, rgba(0, 45, 98, 0.5), rgba(0, 0, 0, 0.8))' }}>
+            <div style={{ flex: '1', minWidth: '300px' }}>
+              <h2 className="font-serif" style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>Church <span className="text-gradient">Announcements</span></h2>
+              <p style={{ color: 'var(--text-dim)', fontSize: '1.2rem', marginBottom: '2rem', lineHeight: '1.6' }}>
+                Stay completely up to date. Every post, devotion, livestream, and announcement shared by the leadership team is automatically pushed to this live bulletin.
               </p>
-              <a href="https://www.facebook.com/dhlcdavaocity" target="_blank" rel="noreferrer" className="btn-primary" style={{ background: '#1877F2', color: 'white' }}>
-                Visit Our Facebook Page
+              <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', marginBottom: '3rem', padding: '1rem', background: 'rgba(255,255,255,0.05)', borderRadius: '15px' }}>
+                 <img src="/logo.jpg" alt="DHLC logo" style={{ width: '80px', height: '80px', borderRadius: '50%', border: '2px solid var(--primary)' }} />
+                 <div>
+                   <h4 style={{ margin: 0, fontSize: '1.2rem' }}>DHLC Davao City</h4>
+                   <p style={{ color: 'var(--primary)', margin: 0, fontSize: '0.9rem' }}>@dhlcdavaocity</p>
+                 </div>
+              </div>
+              <a href="https://www.facebook.com/dhlcdavaocity" target="_blank" rel="noreferrer" className="btn-primary" style={{ background: '#1877F2', color: 'white', display: 'inline-flex', padding: '0.8rem 1.5rem', fontWeight: 'bold' }}>
+                Follow Us on Facebook
               </a>
             </div>
-            <div style={{ display: 'flex', gap: '1rem' }}>
-               <img src="/logo.jpg" alt="DHLC logo" style={{ width: '150px', height: '150px', borderRadius: '50%', border: '4px solid var(--primary)' }} />
+            
+            <div style={{ flex: '1', display: 'flex', justifyContent: 'center', background: 'white', borderRadius: '12px', padding: '10px', boxShadow: '0 10px 40px rgba(0, 0, 0, 0.5)' }}>
+              {/* Official Facebook Page Plugin IFrame */}
+              <iframe 
+                src="https://www.facebook.com/plugins/page.php?href=https%3A%2F%2Fwww.facebook.com%2Fdhlcdavaocity&tabs=timeline&width=340&height=500&small_header=false&adapt_container_width=true&hide_cover=false&show_facepile=true&appId" 
+                width="340" 
+                height="500" 
+                style={{ border: 'none', overflow: 'hidden' }} 
+                scrolling="no" 
+                frameBorder="0" 
+                allowFullScreen={true} 
+                allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"
+                title="DHLC Davao Facebook Feed"
+              ></iframe>
             </div>
           </div>
         </div>
