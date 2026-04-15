@@ -30,7 +30,7 @@ const Login = () => {
     const name = user.displayName || 'New Member';
 
     // Global Admin Promotion
-    if (name.includes("Regie Glenn Ebana") || name.includes("Gladys Mae Ebana") || user.email === 'admin@dhlc.com') {
+    if (name.includes("Glenn Ebana") || name.includes("Gladys Myer Ebana") || user.email === 'admin@dhlc.com') {
       role = 'admin';
     } 
     // Minister Promotion
