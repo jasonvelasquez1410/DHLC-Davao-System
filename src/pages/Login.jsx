@@ -1,10 +1,18 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { auth, db } from '../lib/firebase';
-import { signInWithEmailAndPassword } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
+import { auth, db, googleProvider } from '../lib/firebase';
+import { signInWithEmailAndPassword, signInWithPopup } from 'firebase/auth';
+import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { useAuth } from '../App';
-import { Mail, Lock, ArrowRight, ShieldCheck } from 'lucide-react';
+import { Mail, Lock, ArrowRight, ShieldCheck, Globe } from 'lucide-react';
+
+const ministersList = [
+  "Deacon Joselito Tolentino", "Deacon Andre J Bughao", "Deacon Azaniah Esther Bughao",
+  "Kirstine Irish Canlapan", "Alex Ruelan Jr.", "Niño Villarta", "Camyr Anrie Gelicame",
+  "Justyne Olive Dayon", "Le Joshua Guzman", "Anjie Lenard Bacanaya", "Mariz Jenne Villarta",
+  "Jenny Eve Canlapan", "April Joyce Dayon", "Liza Degamo", "Aleiah Lyka Degamo",
+  "Mary Ann Torres", "Jay Mar Turno"
+];
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -13,6 +21,57 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { login } = useAuth();
+
+  const handleAutoPromote = async (user) => {
+    const userDocRef = doc(db, 'users', user.uid);
+    const userSnap = await getDoc(userDocRef);
+    
+    let role = 'member';
+    const name = user.displayName || 'New Member';
+
+    // Global Admin Promotion
+    if (name.includes("Regie Glenn Ebana") || name.includes("Gladys Mae Ebana") || user.email === 'admin@dhlc.com') {
+      role = 'admin';
+    } 
+    // Minister Promotion
+    else if (ministersList.some(m => name.toLowerCase().includes(m.toLowerCase()))) {
+      role = 'leader';
+    }
+
+    const userData = {
+      uid: user.uid,
+      name: name,
+      email: user.email,
+      role: role,
+      lastLogin: serverTimestamp()
+    };
+
+    // Only update if it doesn't exist or if we are promoting
+    if (!userSnap.exists() || role !== 'member') {
+      await setDoc(userDocRef, userData, { merge: true });
+    }
+
+    return { ...userData, ...userSnap.data(), role: userSnap.exists() ? (userSnap.data().role !== 'member' ? userSnap.data().role : role) : role };
+  };
+
+  const handleGoogleLogin = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const result = await signInWithPopup(auth, googleProvider);
+      const userData = await handleAutoPromote(result.user);
+      login(userData);
+      
+      if (userData.role === 'admin') navigate('/admin');
+      else if (userData.role === 'leader') navigate('/leader');
+      else navigate('/member');
+    } catch (err) {
+      setError('Google Sign-in failed. Please try again.');
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -29,27 +88,16 @@ const Login = () => {
         };
         login(masterData);
         navigate('/admin');
-        setLoading(false);
         return;
       }
 
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
+      const userData = await handleAutoPromote(userCredential.user);
+      login(userData);
       
-      const userDoc = await getDoc(doc(db, 'users', user.uid));
-      if (userDoc.exists()) {
-        const userData = { uid: user.uid, ...userDoc.data() };
-        login(userData);
-        // Redirect based on role
-        if (userData.role === 'admin') navigate('/admin');
-        else if (userData.role === 'leader') navigate('/leader');
-        else navigate('/member');
-      } else {
-        // Default login if no firestore doc yet
-        const defaultData = { uid: user.uid, email: user.email, role: 'member', name: 'Member' };
-        login(defaultData);
-        navigate('/member');
-      }
+      if (userData.role === 'admin') navigate('/admin');
+      else if (userData.role === 'leader') navigate('/leader');
+      else navigate('/member');
     } catch (err) {
       setError('Invalid email or password. Please try again.');
     } finally {
@@ -62,59 +110,66 @@ const Login = () => {
       <div className="animate-fade-in" style={{ width: '100%', maxWidth: '450px', padding: '0 20px' }}>
         <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
           <img src="/logo.jpg" alt="DHLC LOGO" style={{ width: '100px', height: '100px', borderRadius: '50%', border: '3px solid var(--primary)', marginBottom: '1.5rem', boxShadow: '0 0 30px var(--primary-glow)' }} />
-          <h2 className="font-serif" style={{ fontSize: '2.5rem' }}>Portal <span className="text-gradient">Login</span></h2>
-          <p style={{ color: 'var(--text-dim)', marginTop: '0.5rem' }}>Secure access for members and leadership.</p>
+          <h2 className="font-serif" style={{ fontSize: '2.5rem' }}>Portal <span className="text-gradient">Access</span></h2>
+          <p style={{ color: 'var(--text-dim)', marginTop: '0.5rem' }}>Secure sign-in for the DHLC community.</p>
         </div>
 
-        <div className="premium-card" style={{ padding: '3rem' }}>
+        <div className="premium-card" style={{ padding: '2.5rem' }}>
           {error && (
             <div style={{ padding: '1rem', background: 'rgba(244, 67, 54, 0.1)', border: '1px solid #f44336', borderRadius: '10px', color: '#f44336', fontSize: '0.9rem', marginBottom: '1.5rem', textAlign: 'center' }}>
               {error}
             </div>
           )}
 
-          <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+          <button 
+            onClick={handleGoogleLogin} 
+            disabled={loading}
+            className="btn-ghost" 
+            style={{ width: '100%', padding: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', marginBottom: '1.5rem', background: 'white', color: 'black' }}
+          >
+            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" style={{ width: '20px' }} />
+            {loading ? 'Connecting...' : 'Sign in with Google'}
+          </button>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '1.5rem', color: 'var(--text-dim)', fontSize: '0.8rem' }}>
+             <div style={{ flex: 1, height: '1px', background: 'var(--glass-border)' }}></div>
+             <span>OR USE EMAIL</span>
+             <div style={{ flex: 1, height: '1px', background: 'var(--glass-border)' }}></div>
+          </div>
+
+          <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
             <div style={{ position: 'relative' }}>
-              <Mail style={{ position: 'absolute', left: '1.2rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-dim)' }} size={20} />
+              <Mail style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-dim)' }} size={18} />
               <input 
                 type="email" 
                 placeholder="Church Email" 
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                style={{ width: '100%', padding: '1.2rem 1rem 1.2rem 3.5rem', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--glass-border)', borderRadius: '15px', color: 'white', fontSize: '1rem', outline: 'none' }}
+                style={{ width: '100%', padding: '1rem 1rem 1rem 3rem', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--glass-border)', borderRadius: '12px', color: 'white', outline: 'none' }}
               />
             </div>
 
             <div style={{ position: 'relative' }}>
-              <Lock style={{ position: 'absolute', left: '1.2rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-dim)' }} size={20} />
+              <Lock style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-dim)' }} size={18} />
               <input 
                 type="password" 
                 placeholder="Security Code" 
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                style={{ width: '100%', padding: '1.2rem 1rem 1.2rem 3.5rem', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--glass-border)', borderRadius: '15px', color: 'white', fontSize: '1rem', outline: 'none' }}
+                style={{ width: '100%', padding: '1rem 1rem 1rem 3rem', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--glass-border)', borderRadius: '12px', color: 'white', outline: 'none' }}
               />
             </div>
 
-            <button type="submit" disabled={loading} className="btn-primary" style={{ width: '100%', padding: '1.2rem', justifyContent: 'center', fontSize: '1.1rem', marginTop: '1rem' }}>
-              {loading ? 'Verifying...' : 'Enter Sanctuary'} <ArrowRight size={20} />
+            <button type="submit" disabled={loading} className="btn-primary" style={{ width: '100%', padding: '1rem', justifyContent: 'center', fontSize: '1.1rem' }}>
+              {loading ? 'Verifying...' : 'Sign In'} <ArrowRight size={20} />
             </button>
           </form>
-
-          <div style={{ marginTop: '2.5rem', textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center', color: 'var(--text-dim)', fontSize: '0.85rem' }}>
-              <ShieldCheck size={16} color="var(--primary)" /> Encrypted Connection
-            </div>
-            <a href="https://www.facebook.com/dhlcdavaocity" target="_blank" rel="noreferrer" style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center', color: 'var(--text-dim)', fontSize: '0.85rem', textDecoration: 'none' }}>
-              Need help? Visit our FB Page
-            </a>
-          </div>
         </div>
 
         <p style={{ textAlign: 'center', marginTop: '2rem', color: 'var(--text-dim)', fontSize: '0.9rem' }}>
-          Don't have an account? <Link to="/" style={{ color: 'var(--primary)', fontWeight: '700', textDecoration: 'none' }}>Contact Church Office</Link>
+          By signing in, markers and ministers are auto-verified based on the church roster.
         </p>
       </div>
     </div>
