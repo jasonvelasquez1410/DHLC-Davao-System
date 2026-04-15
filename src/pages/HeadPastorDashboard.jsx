@@ -40,6 +40,18 @@ const HeadPastorDashboard = () => {
   const isAccountant = user?.role === 'accountant';
   const isHeadPastor = user?.role === 'head_pastor' || user?.role === 'admin';
 
+  // Personalized Greeting Logic
+  let displayName = user?.name?.split(' ')[0] || "Pastor";
+  let title = isAccountant ? 'ACCOUNTANT / PASTOR' : 'HEAD PASTOR';
+
+  if (user?.email === 'dhlc.minister@gmail.com') {
+    displayName = "Pastor Glenn";
+    title = "SENIOR HEAD PASTOR";
+  } else if (user?.email === 'gmcebana.auditor@gmail.com') {
+    displayName = "Pastor Gladys";
+    title = "EXECUTIVE PASTOR / AUDITOR";
+  }
+
   const totalTithes = mockTithingData.reduce((sum, record) => sum + record.amount, 0);
 
   const handleExportCSV = () => {
@@ -75,11 +87,11 @@ const HeadPastorDashboard = () => {
             </p>
           </div>
           <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', background: 'var(--glass)', padding: '0.5rem 1rem', borderRadius: '20px', border: '1px solid var(--glass-border)' }}>
-             <img src="/logo.jpg" alt="Profile" style={{ width: '40px', height: '40px', borderRadius: '50%' }} />
+             <img src={`https://ui-avatars.com/api/?name=${displayName}`} alt="Profile" style={{ width: '40px', height: '40px', borderRadius: '50%' }} />
              <div>
-               <p style={{ fontWeight: 'bold', lineHeight: '1' }}>{user?.name || "Pastor"}</p>
+               <p style={{ fontWeight: 'bold', lineHeight: '1' }}>{displayName}</p>
                <p style={{ fontSize: '0.8rem', color: 'var(--primary)', fontWeight: 'bold' }}>
-                 {isAccountant ? 'ACCOUNTANT / PASTOR' : 'HEAD PASTOR'}
+                 {title}
                </p>
              </div>
           </div>

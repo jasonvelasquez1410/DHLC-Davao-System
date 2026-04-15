@@ -17,12 +17,28 @@ const ministersList = [
 ];
 
 const AdminDashboard = () => {
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('scanner');
   const [members, setMembers] = useState([]);
   const [reports, setReports] = useState([]);
   const [scanResult, setScanResult] = useState(null);
   const [scanning, setScanning] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+
+  // Personalized Greeting Logic
+  let dashboardTitle = "Admin Hub";
+  let dashboardSubtitle = "Manage members, track growth, and oversee church operations.";
+  let displayName = user?.name?.split(' ')[0] || "Admin";
+
+  if (user?.email === 'dhlc.minister@gmail.com') {
+    dashboardTitle = "Head Pastor Command Center";
+    dashboardSubtitle = "Welcome back, Pastor Glenn. Oversee your flock and ministry health.";
+    displayName = "Pastor Glenn";
+  } else if (user?.email === 'gmcebana.auditor@gmail.com') {
+    dashboardTitle = "Executive Pastor Dashboard";
+    dashboardSubtitle = "Welcome back, Pastor Gladys. Oversee church operations and audits.";
+    displayName = "Pastor Gladys";
+  }
 
   useEffect(() => {
     const fetchData = async () => {
@@ -120,12 +136,20 @@ const AdminDashboard = () => {
       <div className="animate-fade-in">
         
         {/* Header Section */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3rem', flexWrap: 'wrap', gap: '1rem' }}>
           <div>
-            <h1 className="font-serif" style={{ fontSize: '3rem' }}>Admin <span className="text-gradient">Hub</span></h1>
-            <p style={{ color: 'var(--text-dim)' }}>Manage members, track growth, and oversee church operations.</p>
+            <h1 className="font-serif" style={{ fontSize: '3rem' }}>
+              {dashboardTitle.split(' ').map((word, i, arr) => 
+                i === arr.length - 1 ? <span key={i} className="text-gradient">{word}</span> : `${word} `
+              )}
+            </h1>
+            <p style={{ color: 'var(--text-dim)', fontSize: '1.1rem' }}>{dashboardSubtitle}</p>
           </div>
-          <div style={{ display: 'flex', gap: '1rem' }}>
+          <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+             <div style={{ background: 'var(--glass)', padding: '0.6rem 1.2rem', borderRadius: '20px', border: '1px solid var(--glass-border)', display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
+               <img src={user?.photoURL || `https://ui-avatars.com/api/?name=${displayName}`} alt="Profile" style={{ width: '35px', borderRadius: '50%' }} />
+               <span style={{ fontWeight: 'bold' }}>{displayName}</span>
+             </div>
              <button className="btn-ghost" style={{ padding: '0.6rem 1.2rem' }}><Download size={18} /> Export Data</button>
              <button className="btn-primary" style={{ padding: '0.6rem 1.2rem' }}><PlusCircle size={18} /> New Member</button>
           </div>
