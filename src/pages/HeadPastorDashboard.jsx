@@ -42,6 +42,24 @@ const HeadPastorDashboard = () => {
 
   const totalTithes = mockTithingData.reduce((sum, record) => sum + record.amount, 0);
 
+  const handleExportCSV = () => {
+    let csvContent = "data:text/csv;charset=utf-8,Member Name,Date,Status,Amount\n";
+    mockTithingData.forEach(record => {
+      const status = record.tithed ? "Faithful" : "Pending";
+      const amount = isAccountant && record.tithed ? record.amount : (record.tithed ? "Hidden" : "0");
+      csvContent += `${record.name},${record.date},${status},${amount}\n`;
+    });
+    
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    const dateStr = new Date().toISOString().slice(0, 10);
+    link.setAttribute("download", `DHLC_Tithing_Report_${dateStr}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <div className="container" style={{ paddingTop: '120px', paddingBottom: '60px' }}>
       <div className="animate-fade-in">
@@ -267,7 +285,7 @@ const HeadPastorDashboard = () => {
               </div>
               
               <div style={{ marginTop: '2rem', display: 'flex', justifyContent: 'flex-end' }}>
-                <button className="btn-ghost" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <button onClick={handleExportCSV} className="btn-ghost" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <FileText size={18} /> Export Report
                 </button>
               </div>
