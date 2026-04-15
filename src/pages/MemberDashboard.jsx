@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { db } from '../lib/firebase';
 import { collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
 import { useAuth } from '../App';
-import { QRCodeSVG } from 'qrcode.react';
+import { QRCodeCanvas } from 'qrcode.react';
 import { User, Mail, Award, Calendar, ExternalLink, QrCode } from 'lucide-react';
 
 const MemberDashboard = () => {
@@ -29,6 +29,18 @@ const MemberDashboard = () => {
     };
     if (user?.uid) fetchHistory();
   }, [user?.uid]);
+
+  const downloadQR = () => {
+    const canvas = document.getElementById("qr-canvas");
+    if (!canvas) return;
+    const pngUrl = canvas.toDataURL("image/png").replace("image/png", "image/octet-stream");
+    let downloadLink = document.createElement("a");
+    downloadLink.href = pngUrl;
+    downloadLink.download = `${user.name.replace(/\s+/g, '_')}_DHLC_Attendance_QR.png`;
+    document.body.appendChild(downloadLink);
+    downloadLink.click();
+    document.body.removeChild(downloadLink);
+  };
 
   return (
     <div className="container" style={{ paddingTop: '120px', paddingBottom: '60px' }}>
@@ -117,8 +129,9 @@ const MemberDashboard = () => {
               </p>
             </div>
 
-            <div className="qr-container">
-              <QRCodeSVG 
+            <div className="qr-container" style={{ background: 'white', padding: '1rem', borderRadius: '15px' }}>
+              <QRCodeCanvas 
+                id="qr-canvas"
                 value={user.uid} // Using UID as the QR identifier
                 size={220}
                 level="H"
@@ -131,9 +144,11 @@ const MemberDashboard = () => {
               Unique ID: {user.uid.substring(0, 10)}...
             </div>
             
-            <button className="btn-primary" style={{ marginTop: '2rem', width: '100%', justifyContent: 'center' }} onClick={() => window.print()}>
-               Print My QR Code
-            </button>
+            <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem', width: '100%' }}>
+              <button className="btn-primary" style={{ flex: 1, justifyContent: 'center' }} onClick={downloadQR}>
+                 Save as Image
+              </button>
+            </div>
           </div>
 
         </div>

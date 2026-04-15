@@ -5,8 +5,9 @@ import { useAuth } from '../App';
 import { 
   Users, TrendingUp, Award, UserPlus, 
   CheckCircle2, XCircle, LayoutDashboard, 
-  Calendar, MessageSquare 
+  Calendar, MessageSquare, QrCode
 } from 'lucide-react';
+import { QRCodeCanvas } from 'qrcode.react';
 
 const LeaderPortal = () => {
   const { user } = useAuth();
@@ -35,6 +36,18 @@ const LeaderPortal = () => {
     };
     if (user?.uid) fetchGroup();
   }, [user?.uid]);
+
+  const downloadQR = () => {
+    const canvas = document.getElementById("leader-qr");
+    if (!canvas) return;
+    const pngUrl = canvas.toDataURL("image/png").replace("image/png", "image/octet-stream");
+    let downloadLink = document.createElement("a");
+    downloadLink.href = pngUrl;
+    downloadLink.download = `${user.name.replace(/\s+/g, '_')}_DHLC_Leader_QR.png`;
+    document.body.appendChild(downloadLink);
+    downloadLink.click();
+    document.body.removeChild(downloadLink);
+  };
 
   if (loading) return (
     <div className="hero" style={{ justifyContent: 'center' }}>
@@ -159,6 +172,24 @@ const LeaderPortal = () => {
                 <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
                    <span style={{ fontSize: '0.8rem', color: 'var(--text-dim)' }}>— DHLC Leadership Manuel</span>
                 </div>
+             </div>
+
+             <div className="premium-card" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
+                <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                   <QrCode size={18} color="var(--primary)" /> Leader Check-In QR
+                </h3>
+                <div style={{ background: 'white', padding: '1rem', borderRadius: '15px', display: 'inline-block' }}>
+                   <QRCodeCanvas 
+                     id="leader-qr"
+                     value={user.uid}
+                     size={200}
+                     level="H"
+                     fgColor="#001226"
+                   />
+                </div>
+                <button className="btn-ghost" style={{ marginTop: '1.5rem', width: '100%' }} onClick={downloadQR}>
+                   Save QR as PNG
+                </button>
              </div>
           </div>
 
