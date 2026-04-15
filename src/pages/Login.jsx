@@ -29,8 +29,9 @@ const Login = () => {
     let role = 'member';
     const name = user.displayName || 'New Member';
 
-    // Global Admin Promotion
-    if (name.includes("Glenn Ebana") || name.includes("Gladys Myer Ebana") || user.email === 'admin@dhlc.com') {
+    // VIP Global Admin Promotion (Head Pastors)
+    const adminEmails = ['admin@dhlc.com', 'dhlc.minister@gmail.com', 'gmcebana.auditor@gmail.com'];
+    if (adminEmails.includes(user.email)) {
       role = 'admin';
     } 
     // Minister Promotion
