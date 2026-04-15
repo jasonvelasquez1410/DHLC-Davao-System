@@ -111,7 +111,10 @@ const Navbar = () => {
             {user.role === 'admin' && <Link to="/admin" className="nav-link">Admin Panel</Link>}
             {user.role === 'leader' && <Link to="/leader" className="nav-link">Leader Portal</Link>}
             {user.role === 'member' && <Link to="/member" className="nav-link">Account</Link>}
-            {(user.role === 'head_pastor' || user.role === 'accountant') && <Link to="/command-center" className="nav-link" style={{color: 'var(--primary)', fontWeight: 'bold'}}>Command Center</Link>}
+            {(user.role === 'head_pastor' || user.role === 'accountant' || user.role === 'admin') && <Link to="/command-center" className="nav-link" style={{color: 'var(--primary)', fontWeight: 'bold'}}>Command Center</Link>}
+            <div style={{ marginRight: '1rem', color: 'var(--text-dim)', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '5px' }}>
+              <User size={14} /> <span>Welcome, {user.name?.split(' ')[0]}</span>
+            </div>
             <button onClick={logout} className="btn-primary" style={{ padding: '0.6rem 1.2rem', fontSize: '0.9rem' }}>
               <LogOut size={16} /> Logout
             </button>
