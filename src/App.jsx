@@ -7,6 +7,7 @@ import AdminDashboard from './pages/AdminDashboard';
 import LeaderPortal from './pages/LeaderPortal';
 import MemberDashboard from './pages/MemberDashboard';
 import Discuss from './pages/Discuss';
+import HeadPastorDashboard from './pages/HeadPastorDashboard';
 
 import { auth, db } from './lib/firebase';
 import { onAuthStateChanged, signOut as firebaseSignOut } from 'firebase/auth';
@@ -66,11 +67,17 @@ export const AuthProvider = ({ children }) => {
 export const useAuth = () => useContext(AuthContext);
 
 // --- Protected Route ---
-const ProtectedRoute = ({ children, role }) => {
+const ProtectedRoute = ({ children, role, roles }) => {
   const { user } = useAuth();
   if (!user) return <Navigate to="/login" />;
+  
+  if (roles && !roles.includes(user.role)) {
+    if (user.role === 'admin') return children;
+    return <Navigate to="/" />;
+  }
+
   if (role && user.role !== role) {
-     if (user.role === 'admin' || user.role === 'leader') return children; // Allow elevated roles to see lower role areas
+     if (user.role === 'admin' || user.role === 'leader' || user.role === 'head_pastor') return children; // Allow elevated roles to see lower role areas
      return <Navigate to="/" />;
   }
   return children;
@@ -104,6 +111,7 @@ const Navbar = () => {
             {user.role === 'admin' && <Link to="/admin" className="nav-link">Admin Panel</Link>}
             {user.role === 'leader' && <Link to="/leader" className="nav-link">Leader Portal</Link>}
             {user.role === 'member' && <Link to="/member" className="nav-link">Account</Link>}
+            {(user.role === 'head_pastor' || user.role === 'accountant') && <Link to="/command-center" className="nav-link" style={{color: 'var(--primary)', fontWeight: 'bold'}}>Command Center</Link>}
             <button onClick={logout} className="btn-primary" style={{ padding: '0.6rem 1.2rem', fontSize: '0.9rem' }}>
               <LogOut size={16} /> Logout
             </button>
@@ -144,6 +152,11 @@ function App() {
           <Route path="/member" element={
             <ProtectedRoute role="member">
               <MemberDashboard />
+            </ProtectedRoute>
+          } />
+          <Route path="/command-center" element={
+            <ProtectedRoute roles={['head_pastor', 'accountant']}>
+              <HeadPastorDashboard />
             </ProtectedRoute>
           } />
         </Routes>

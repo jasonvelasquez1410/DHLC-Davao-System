@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { db } from '../lib/firebase';
+import { db, storage } from '../lib/firebase';
 import { collection, addDoc, query, where, orderBy, onSnapshot, serverTimestamp, getDocs } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useAuth } from '../App';
 import { 
   Send, Hash, Users, MessageSquare, Video, 
   MoreVertical, Phone, Paperclip, Smile, Plus,
   Info, Bell, UserCircle, Settings, Music, Tool,
-  Shield, Camera, Heart, Briefcase, Coffee, Baby
+  Shield, Camera, Heart, Briefcase, Coffee, Baby, Download
 } from 'lucide-react';
 
 const ShieldCheckIcon = (props) => (
@@ -29,10 +30,11 @@ const baseChannels = [
 const Discuss = () => {
   const { user } = useAuth();
   const [channels, setChannels] = useState(baseChannels);
-  const [activeChannel, setActiveChannel] = useState(baseChannels[1]); // Default to Levitical Ministers for leaders
+  const [activeChannel, setActiveChannel] = useState(baseChannels[1]);
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
   const [activeUsers, setActiveUsers] = useState([]);
+  const [uploading, setUploading] = useState(false);
   const scrollRef = useRef();
 
   // Fetch Dynamic Channels from Firestore
@@ -90,6 +92,36 @@ const Discuss = () => {
       createdAt: serverTimestamp()
     });
     setNewMessage('');
+  };
+
+  const handleFileUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setUploading(true);
+    try {
+      const storageRef = ref(storage, `chat/${activeChannel.id}/${Date.now()}_${file.name}`);
+      await uploadBytes(storageRef, file);
+      const url = await getDownloadURL(storageRef);
+
+      await addDoc(collection(db, 'messages'), {
+        text: `Shared a file: ${file.name}`,
+        fileUrl: url,
+        fileName: file.name,
+        fileType: file.type,
+        channelId: activeChannel.id,
+        senderId: user.uid,
+        senderName: user.name,
+        senderPhoto: user.photoURL || null,
+        createdAt: serverTimestamp(),
+        isFile: true
+      });
+    } catch (err) {
+      console.error(err);
+      alert("Attachment failed. Try a smaller file.");
+    } finally {
+      setUploading(false);
+    }
   };
 
   const createChannel = async () => {
@@ -159,13 +191,6 @@ const Discuss = () => {
         </header>
 
         <div className="messages-area">
-          {messages.length === 0 && (
-            <div style={{ textAlign: 'center', padding: '4rem 2rem', opacity: 0.5 }}>
-              <MessageSquare size={48} style={{ marginBottom: '1rem' }} />
-              <p>Welcome to the {activeChannel.name} channel!</p>
-              <p style={{ fontSize: '0.8rem' }}>Start a conversation with your fellow ministers.</p>
-            </div>
-          )}
           {messages.map((msg) => (
             <div key={msg.id} style={{ display: 'flex', gap: '1rem', alignSelf: msg.senderId === user.uid ? 'flex-end' : 'flex-start', maxWidth: '80%' }}>
               {msg.senderId !== user.uid && (
@@ -176,7 +201,19 @@ const Discuss = () => {
                   <span style={{ fontWeight: 700 }}>{msg.senderName}</span>
                   <span style={{ fontSize: '0.7rem', opacity: 0.6 }}>{msg.createdAt?.toDate ? msg.createdAt.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '...'}</span>
                 </div>
-                {msg.isCall ? (
+                {msg.isFile ? (
+                  <div style={{ padding: '10px', background: 'rgba(255,255,255,0.05)', borderRadius: '10px', border: '1px solid var(--glass-border)', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div style={{ background: 'var(--primary-glow)', padding: '8px', borderRadius: '8px' }}>
+                       {msg.fileType?.includes('image') ? <Camera size={20} /> : <File size={20} />}
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <p style={{ fontSize: '0.85rem', fontWeight: 'bold', marginBottom: '4px', wordBreak: 'break-all' }}>{msg.fileName}</p>
+                      <a href={msg.fileUrl} target="_blank" rel="noreferrer" style={{ fontSize: '0.75rem', color: 'var(--primary)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <Download size={14} /> Download File
+                      </a>
+                    </div>
+                  </div>
+                ) : msg.isCall ? (
                   <div style={{ padding: '10px', background: 'rgba(255,255,255,0.05)', borderRadius: '10px', border: '1px solid var(--primary)' }}>
                     <p style={{ marginBottom: '8px', fontSize: '0.85rem' }}>🎥 {msg.senderName} started a Video Call</p>
                     <a href={msg.text.split(': ')[1]} target="_blank" rel="noreferrer" className="btn-primary" style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem', display: 'inline-block' }}>JOIN CALL</a>
@@ -189,8 +226,12 @@ const Discuss = () => {
         </div>
 
         <form className="chat-input-area" onSubmit={handleSendMessage}>
-          <input type="text" className="chat-input" placeholder={`Message #${activeChannel.name}`} value={newMessage} onChange={(e) => setNewMessage(e.target.value)} />
-          <button type="submit" className="btn-primary" style={{ padding: '0.8rem' }}><Send size={18} /></button>
+          <label style={{ cursor: 'pointer' }} className="btn-ghost" title="Attach Media">
+            <Paperclip size={18} />
+            <input type="file" onChange={handleFileUpload} style={{ display: 'none' }} disabled={uploading} />
+          </label>
+          <input type="text" className="chat-input" placeholder={uploading ? "Uploading media..." : `Message #${activeChannel.name}`} value={newMessage} onChange={(e) => setNewMessage(e.target.value)} disabled={uploading} />
+          <button type="submit" className="btn-primary" style={{ padding: '0.8rem' }} disabled={uploading}><Send size={18} /></button>
         </form>
       </main>
 
@@ -200,9 +241,9 @@ const Discuss = () => {
           <h4 style={{ display: 'flex', alignItems: 'center', gap: '5px', marginBottom: '8px', fontSize: '0.9rem' }}>
             <Info size={16} color="var(--primary)" /> Minister Guide
           </h4>
-          <p style={{ fontSize: '0.75rem' }}>• Use departments on the left to coordinate.</p>
+          <p style={{ fontSize: '0.75rem' }}>• Use the **Paperclip** to share files/media.</p>
+          <p style={{ fontSize: '0.75rem' }}>• Files are auto-stored in the church library.</p>
           <p style={{ fontSize: '0.75rem' }}>• Click Video icon for instant group meetings.</p>
-          <p style={{ fontSize: '0.75rem' }}>• All chats are secure and real-time.</p>
         </div>
 
         <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1rem', color: 'var(--text-dim)' }}>
@@ -214,7 +255,7 @@ const Discuss = () => {
             <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                <div style={{ position: 'relative' }}>
                  <img src={u.photoURL || `https://ui-avatars.com/api/?name=${u.name}`} className="user-avatar" style={{ width: '28px', height: '28px' }} alt="" />
-                 <div style={{ position: 'absolute', bottom: 0, right: 0, width: '6px', height: '6px', background: '#4caf50', borderRadius: '50%', border: '1px solid var(--bg-dark)' }}></div>
+                 <div style={{ position: 'absolute', bottom: 0, right: 0, width: '6px', height: '6px', background: '#4caf50', borderRadius: '50%', border: '2px solid var(--bg-dark)' }}></div>
                </div>
                <div>
                  <p style={{ fontWeight: '500', fontSize: '0.8rem', marginBottom: '0' }}>{u.name}</p>
