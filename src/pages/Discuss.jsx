@@ -5,20 +5,31 @@ import { useAuth } from '../App';
 import { 
   Send, Hash, Users, MessageSquare, Video, 
   MoreVertical, Phone, Paperclip, Smile, Plus,
-  Info, Bell, UserCircle, Settings
+  Info, Bell, UserCircle, Settings, Music, Tool,
+  Shield, Camera, Heart, Briefcase, Coffee, Baby
 } from 'lucide-react';
 
 const ShieldCheckIcon = (props) => (
   <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
 );
 
+const baseChannels = [
+  { id: 'general', name: 'General', icon: Hash, roles: ['admin', 'leader', 'member'] },
+  { id: 'levitical-ministers', name: 'Levitical Ministers', icon: ShieldCheckIcon, roles: ['admin', 'leader'] },
+  { id: 'music-dept', name: 'Music Department', icon: Music, roles: ['admin', 'leader'] },
+  { id: 'multimedia-dept', name: 'Multimedia Dept', icon: Camera, roles: ['admin', 'leader'] },
+  { id: 'logistics-engineering', name: 'Logistics/Engineering', icon: Tool, roles: ['admin', 'leader'] },
+  { id: 'finance-hr', name: 'Finance & HR', icon: Briefcase, roles: ['admin', 'leader'] },
+  { id: 'security-custodial', name: 'Security & Custodial', icon: Shield, roles: ['admin', 'leader'] },
+  { id: 'hospitality-food', name: 'Hospitality & Food', icon: Coffee, roles: ['admin', 'leader'] },
+  { id: 'healthcare-dept', name: 'Healthcare Dept', icon: Heart, roles: ['admin', 'leader'] },
+  { id: 'childrens-dept', name: "Children's Dept", icon: Baby, roles: ['admin', 'leader'] }
+];
+
 const Discuss = () => {
   const { user } = useAuth();
-  const [channels, setChannels] = useState([
-    { id: 'general', name: 'General', icon: Hash, roles: ['admin', 'leader', 'member'] },
-    { id: 'leadership', name: 'Ministers & Leaders', icon: ShieldCheckIcon, roles: ['admin', 'leader'] }
-  ]);
-  const [activeChannel, setActiveChannel] = useState(channels[0]);
+  const [channels, setChannels] = useState(baseChannels);
+  const [activeChannel, setActiveChannel] = useState(baseChannels[1]); // Default to Levitical Ministers for leaders
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
   const [activeUsers, setActiveUsers] = useState([]);
@@ -35,14 +46,14 @@ const Discuss = () => {
         roles: doc.data().roles || ['admin', 'leader', 'member'] 
       }));
       setChannels(prev => {
-        const base = prev.filter(c => c.id === 'general' || c.id === 'leadership');
-        return [...base, ...dbChannels];
+        const ids = new Set(baseChannels.map(c => c.id));
+        const filteredPrev = prev.filter(c => ids.has(c.id));
+        return [...filteredPrev, ...dbChannels];
       });
     });
     return () => unsubscribe();
   }, []);
 
-  // Fetch Active Users (Mocking recent activity)
   useEffect(() => {
     const fetchUsers = async () => {
       const q = query(collection(db, 'users'), where('role', 'in', ['admin', 'leader']));
@@ -82,7 +93,7 @@ const Discuss = () => {
   };
 
   const createChannel = async () => {
-    const name = prompt("Enter Group Chat Name:");
+    const name = prompt("Enter Custom Group Name:");
     if (!name) return;
     await addDoc(collection(db, 'channels'), {
       name: name,
@@ -110,21 +121,12 @@ const Discuss = () => {
     <div className="discuss-container">
       {/* Sidebar (Left) */}
       <aside className="chat-sidebar">
-        <div>
+        <div style={{ overflowY: 'auto', height: '100%' }}>
           <h2 className="font-serif" style={{ marginBottom: '1.5rem' }}>Discuss</h2>
           
-          <div className="guide-card" style={{ marginBottom: '2rem' }}>
-            <h4 style={{ display: 'flex', alignItems: 'center', gap: '5px', marginBottom: '8px' }}>
-              <Info size={16} /> Quick Guide
-            </h4>
-            <p>1. Select a channel to chat.</p>
-            <p>2. Use the Video icon to start a group call.</p>
-            <p>3. Leaders can click (+) to create new group chats.</p>
-          </div>
-
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-               <p style={{ fontSize: '0.7rem', color: 'var(--text-dim)', textTransform: 'uppercase' }}>Threads</p>
+               <p style={{ fontSize: '0.7rem', color: 'var(--text-dim)', textTransform: 'uppercase' }}>Departments</p>
                {(user.role === 'admin' || user.role === 'leader') && (
                  <button onClick={createChannel} style={{ background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer' }}><Plus size={16}/></button>
                )}
@@ -147,16 +149,23 @@ const Discuss = () => {
             </div>
             <div>
               <h3 style={{ margin: 0 }}>{activeChannel.name}</h3>
-              <p style={{ fontSize: '0.75rem', color: 'var(--text-dim)', margin: 0 }}>Discussion thread active</p>
+              <p style={{ fontSize: '0.75rem', color: 'var(--text-dim)', margin: 0 }}>Official Department Thread</p>
             </div>
           </div>
           <div style={{ display: 'flex', gap: '1rem' }}>
-            <button className="btn-ghost" style={{ padding: '0.5rem' }} onClick={startCall}><Video size={18} /></button>
+            <button className="btn-ghost" style={{ padding: '0.5rem' }} onClick={startCall} title="Start Group Call"><Video size={18} /></button>
             <button className="btn-ghost" style={{ padding: '0.5rem' }}><Settings size={18} /></button>
           </div>
         </header>
 
         <div className="messages-area">
+          {messages.length === 0 && (
+            <div style={{ textAlign: 'center', padding: '4rem 2rem', opacity: 0.5 }}>
+              <MessageSquare size={48} style={{ marginBottom: '1rem' }} />
+              <p>Welcome to the {activeChannel.name} channel!</p>
+              <p style={{ fontSize: '0.8rem' }}>Start a conversation with your fellow ministers.</p>
+            </div>
+          )}
           {messages.map((msg) => (
             <div key={msg.id} style={{ display: 'flex', gap: '1rem', alignSelf: msg.senderId === user.uid ? 'flex-end' : 'flex-start', maxWidth: '80%' }}>
               {msg.senderId !== user.uid && (
@@ -169,8 +178,8 @@ const Discuss = () => {
                 </div>
                 {msg.isCall ? (
                   <div style={{ padding: '10px', background: 'rgba(255,255,255,0.05)', borderRadius: '10px', border: '1px solid var(--primary)' }}>
-                    <p style={{ marginBottom: '8px', fontSize: '0.85rem' }}>🎥 Group Video Call Link Shared</p>
-                    <a href={msg.text.split(': ')[1]} target="_blank" rel="noreferrer" className="btn-primary" style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }}>JOIN NOW</a>
+                    <p style={{ marginBottom: '8px', fontSize: '0.85rem' }}>🎥 {msg.senderName} started a Video Call</p>
+                    <a href={msg.text.split(': ')[1]} target="_blank" rel="noreferrer" className="btn-primary" style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem', display: 'inline-block' }}>JOIN CALL</a>
                   </div>
                 ) : <p style={{ fontSize: '0.9rem' }}>{msg.text}</p>}
               </div>
@@ -185,36 +194,43 @@ const Discuss = () => {
         </form>
       </main>
 
-      {/* Notifications Side (Right) */}
+      {/* Roster & Info Side (Right) */}
       <aside className="chat-notification-sidebar">
-        <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1.1rem' }}>
-          <Bell size={18} color="var(--primary)" /> Activity
+        <div className="guide-card" style={{ marginBottom: '1.5rem', background: 'rgba(242, 153, 0, 0.05)', border: '1px solid var(--glass-border)' }}>
+          <h4 style={{ display: 'flex', alignItems: 'center', gap: '5px', marginBottom: '8px', fontSize: '0.9rem' }}>
+            <Info size={16} color="var(--primary)" /> Minister Guide
+          </h4>
+          <p style={{ fontSize: '0.75rem' }}>• Use departments on the left to coordinate.</p>
+          <p style={{ fontSize: '0.75rem' }}>• Click Video icon for instant group meetings.</p>
+          <p style={{ fontSize: '0.75rem' }}>• All chats are secure and real-time.</p>
+        </div>
+
+        <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1rem', color: 'var(--text-dim)' }}>
+          <Users size={18} /> Active Roster
         </h3>
         
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          <p style={{ fontSize: '0.7rem', color: 'var(--text-dim)', textTransform: 'uppercase' }}>Active Ministers</p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem', marginTop: '1rem' }}>
           {activeUsers.map((u, i) => (
-            <div key={i} className="activity-item" style={{ border: 'none', background: 'transparent', padding: '0.5rem 0', display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                <div style={{ position: 'relative' }}>
-                 <img src={u.photoURL || `https://ui-avatars.com/api/?name=${u.name}`} className="user-avatar" style={{ width: '30px', height: '30px' }} alt="" />
-                 <div style={{ position: 'absolute', bottom: 0, right: 0, width: '8px', height: '8px', background: '#4caf50', borderRadius: '50%', border: '2px solid var(--bg-dark)' }}></div>
+                 <img src={u.photoURL || `https://ui-avatars.com/api/?name=${u.name}`} className="user-avatar" style={{ width: '28px', height: '28px' }} alt="" />
+                 <div style={{ position: 'absolute', bottom: 0, right: 0, width: '6px', height: '6px', background: '#4caf50', borderRadius: '50%', border: '1px solid var(--bg-dark)' }}></div>
                </div>
                <div>
-                 <p style={{ fontWeight: '600', fontSize: '0.85rem', marginBottom: '2px' }}>{u.name}</p>
-                 <p style={{ fontSize: '0.7rem', color: 'var(--text-dim)', textTransform: 'capitalize' }}>{u.role}</p>
+                 <p style={{ fontWeight: '500', fontSize: '0.8rem', marginBottom: '0' }}>{u.name}</p>
+                 <p style={{ fontSize: '0.65rem', color: 'var(--text-dim)' }}>{u.role}</p>
                </div>
             </div>
           ))}
         </div>
 
         <div style={{ marginTop: 'auto' }}>
-           <div className="premium-card" style={{ padding: '1.2rem', background: 'rgba(0, 45, 98, 0.4)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
-                <UserCircle size={20} color="var(--primary)" />
-                <span style={{ fontWeight: 'bold' }}>Your Profile</span>
+           <div className="premium-card" style={{ padding: '1rem', background: 'rgba(0, 45, 98, 0.4)' }}>
+              <p style={{ fontSize: '0.75rem', color: 'var(--text-dim)', marginBottom: '4px' }}>Logged in as:</p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <img src={user.photoURL || `https://ui-avatars.com/api/?name=${user.name}`} className="user-avatar" style={{ width: '24px', height: '24px' }} alt="" />
+                <span style={{ fontWeight: 'bold', fontSize: '0.85rem' }}>{user.name}</span>
               </div>
-              <p style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>Status: Available</p>
-              <p style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>Name: {user.name}</p>
            </div>
         </div>
       </aside>
