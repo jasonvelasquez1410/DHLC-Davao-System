@@ -6,7 +6,7 @@ import { useAuth } from '../App';
 import { 
   Send, Hash, Users, MessageSquare, Video, 
   MoreVertical, Phone, Paperclip, Smile, Plus,
-  Info, Bell, UserCircle, Settings, Music, Tool,
+  Info, Bell, UserCircle, Settings, Music, Wrench, File,
   Shield, Camera, Heart, Briefcase, Coffee, Baby, Download
 } from 'lucide-react';
 
@@ -19,7 +19,7 @@ const baseChannels = [
   { id: 'levitical-ministers', name: 'Levitical Ministers', icon: ShieldCheckIcon, roles: ['admin', 'leader'] },
   { id: 'music-dept', name: 'Music Department', icon: Music, roles: ['admin', 'leader'] },
   { id: 'multimedia-dept', name: 'Multimedia Dept', icon: Camera, roles: ['admin', 'leader'] },
-  { id: 'logistics-engineering', name: 'Logistics/Engineering', icon: Tool, roles: ['admin', 'leader'] },
+  { id: 'logistics-engineering', name: 'Logistics/Engineering', icon: Wrench, roles: ['admin', 'leader'] },
   { id: 'finance-hr', name: 'Finance & HR', icon: Briefcase, roles: ['admin', 'leader'] },
   { id: 'security-custodial', name: 'Security & Custodial', icon: Shield, roles: ['admin', 'leader'] },
   { id: 'hospitality-food', name: 'Hospitality & Food', icon: Coffee, roles: ['admin', 'leader'] },
