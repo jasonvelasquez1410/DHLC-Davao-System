@@ -209,8 +209,10 @@ const Discuss = () => {
               onChange={(e) => setNewMessage(e.target.value)} 
               style={{ flex: 1, background: 'rgba(255,255,255,0.05)', border: 'none', padding: '1rem 1.5rem', borderRadius: '12px', color: 'white', outline: 'none' }}
             />
-            <button type="submit" style={{ width: '50px', height: '50px', borderRadius: '50%', background: DHLC_GOLD, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-               <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="black" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+            <button type="submit" style={{ width: '52px', height: '52px', borderRadius: '50%', background: DHLC_GOLD, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 10px rgba(0,0,0,0.3)' }}>
+               <svg viewBox="0 0 24 24" width="24" height="24" stroke="#ffffff" strokeWidth="3" fill="none" strokeLinecap="round" strokeLinejoin="round" style={{ marginLeft: '3px' }}>
+                 <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" />
+               </svg>
             </button>
          </form>
 
