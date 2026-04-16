@@ -29,8 +29,12 @@ const baseChannels = [
 
 const Discuss = () => {
   const { user } = useAuth();
+  
+  // Filter base channels by role first
+  const allowedBaseChannels = baseChannels.filter(c => c.roles.includes(user.role));
+  
   const [channels, setChannels] = useState(baseChannels);
-  const [activeChannel, setActiveChannel] = useState(baseChannels[1]);
+  const [activeChannel, setActiveChannel] = useState(allowedBaseChannels[0] || baseChannels[0]);
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
   const [activeUsers, setActiveUsers] = useState([]);
@@ -67,15 +71,23 @@ const Discuss = () => {
 
   useEffect(() => {
     if (!activeChannel) return;
+    // Query without 'where' first if index might be missing, 
+    // but in production 'where-orderBy' is best.
+    // Adding try-catch or simplified query for robustness
     const q = query(
       collection(db, 'messages'),
-      where('channelId', '==', activeChannel.id),
       orderBy('createdAt', 'asc')
     );
+    
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const msgs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const msgs = snapshot.docs
+        .map(doc => ({ id: doc.id, ...doc.data() }))
+        .filter(m => m.channelId === activeChannel.id); // Client-side filter as fallback for missing index
+      
       setMessages(msgs);
       setTimeout(() => scrollRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+    }, (error) => {
+      console.error("Firestore Error in Discuss:", error);
     });
     return () => unsubscribe();
   }, [activeChannel.id]);
