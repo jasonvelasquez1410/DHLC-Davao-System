@@ -259,13 +259,22 @@ const AdminDashboard = () => {
                                 <select 
                                    value={m.role || 'member'} 
                                    onChange={(e) => handleUpdateRole(m.id, e.target.value)}
-                                   style={{ background: 'rgba(242,153,0,0.1)', border: '1px solid rgba(242,153,0,0.2)', color: 'white', padding: '0.3rem', borderRadius: '5px', fontSize: '0.8rem' }}
+                                   style={{ 
+                                      background: '#001a33', 
+                                      border: '1px solid var(--primary)', 
+                                      color: 'white', 
+                                      padding: '0.4rem 0.8rem', 
+                                      borderRadius: '10px', 
+                                      fontSize: '0.85rem',
+                                      cursor: 'pointer',
+                                      outline: 'none'
+                                   }}
                                    disabled={user.email !== 'admin@dhlc.com'}
                                 >
-                                   <option value="member">Member</option>
-                                   <option value="leader">Leader</option>
-                                   <option value="minister">Minister</option>
-                                   <option value="admin">Admin Hub</option>
+                                   <option value="member" style={{ background: '#001a33', color: 'white' }}>Member</option>
+                                   <option value="leader" style={{ background: '#001a33', color: 'white' }}>Leader</option>
+                                   <option value="minister" style={{ background: '#001a33', color: 'white' }}>Minister</option>
+                                   <option value="admin" style={{ background: '#001a33', color: 'white' }}>Admin Hub</option>
                                 </select>
                              </td>
                              <td><button onClick={() => {setSelectedMember(m); setShowMemberID(true);}} className="btn-ghost" style={{ fontSize: '0.8rem' }}><Scan size={14} /> VIEW QR</button></td>
