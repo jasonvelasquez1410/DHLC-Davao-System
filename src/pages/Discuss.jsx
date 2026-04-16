@@ -194,7 +194,7 @@ const Discuss = () => {
                  <div style={{ position: 'relative', background: m.senderId === user.uid ? 'rgba(242, 153, 0, 0.1)' : 'rgba(255,255,255,0.05)', padding: '0.8rem 1.2rem', borderRadius: '15px', maxWidth: '70%', border: '1px solid rgba(255,255,255,0.05)' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                        <p style={{ margin: '0 0 0.3rem 0', fontWeight: 'bold', fontSize: '0.7rem', color: DHLC_GOLD }}>{m.senderName}</p>
-                       {(m.senderId === user.uid || user.email === 'admin@dhlc.com') && (
+                       {(m.senderId === user.uid || user.role === 'admin') && (
                           <button onClick={() => handleDeleteMessage(m.id)} className="btn-ghost" style={{ padding: '2px', opacity: 0.3, background: 'none' }} title="Delete Message"><Trash2 size={12} /></button>
                        )}
                     </div>
