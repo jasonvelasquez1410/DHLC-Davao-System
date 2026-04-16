@@ -140,8 +140,16 @@ const Discuss = () => {
     }
   };
 
+  const [showEmojis, setShowEmojis] = useState(false);
+  const emojis = ['🙌', '❤️', '🔥', '😂', '🙏', '✨', '👍', '😊', '⛪', '🎸', '📢', '✅'];
+
+  const addEmoji = (emoji) => {
+    setNewMessage(prev => prev + emoji);
+    setShowEmojis(false);
+  };
+
   return (
-    <div className="discuss-container" style={{ background: '#001226', height: '100vh', display: 'flex', overflow: 'hidden' }}>
+    <div className="discuss-container" style={{ background: '#001226', height: '100vh', display: 'flex', overflow: 'hidden', paddingTop: '80px' }}>
       
       {/* ODOO SIDEBAR */}
       <aside className="odoo-sidebar" style={{ width: '300px', borderRight: '1px solid rgba(255,255,255,0.05)', background: '#000d1a', display: 'flex', flexDirection: 'column' }}>
@@ -159,8 +167,7 @@ const Discuss = () => {
            {/* Channels Section */}
            <div style={{ marginBottom: '2rem' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 0.5rem', marginBottom: '0.8rem' }}>
-                 <p style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.4)', fontWeight: 'bold', textTransform: 'uppercase' }}>Channels</p>
-                 <Plus size={16} className="pointer" style={{ color: 'var(--primary)' }} />
+                 <p style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.4)', fontWeight: 'bold', textTransform: 'uppercase' }}>Department Groups</p>
               </div>
               {channels.filter(c => c.roles.includes(user.role)).map(c => (
                 <button key={c.id} onClick={() => selectChat('channel', c.id, c)} className={`sidebar-item ${activeTab.type === 'channel' && activeTab.id === c.id ? 'active' : ''}`}>
@@ -188,12 +195,12 @@ const Discuss = () => {
         </div>
       </aside>
 
-      {/* SEARCH OVERLAY (Odoo Style) */}
+      {/* SEARCH OVERLAY */}
       {showUserSearch && (
-        <div style={{ position: 'fixed', top: '100px', left: '320px', width: '400px', background: '#002244', zIndex: 100, borderRadius: '15px', border: '1px solid var(--primary)', padding: '1.5rem', boxShadow: '0 20px 50px rgba(0,0,0,0.5)' }}>
+        <div style={{ position: 'fixed', top: '120px', left: '320px', width: '400px', background: '#002244', zIndex: 100, borderRadius: '15px', border: '1px solid var(--primary)', padding: '1.5rem', boxShadow: '0 20px 50px rgba(0,0,0,0.5)' }}>
            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', borderBottom: '1px solid rgba(255,255,255,0.1)', pb: '1rem', mb: '1rem' }}>
              <Search size={20} color="var(--primary)" />
-             <input autoFocus placeholder="Search members to chat..." value={userSearchTerm} onChange={(e) => setUserSearchTerm(e.target.value)} style={{ background: 'none', border: 'none', color: 'white', fontSize: '1.1rem', outline: 'none', width: '100%' }} />
+             <input autoFocus placeholder="Find member..." value={userSearchTerm} onChange={(e) => setUserSearchTerm(e.target.value)} style={{ background: 'none', border: 'none', color: 'white', fontSize: '1.1rem', outline: 'none', width: '100%' }} />
              <X size={20} className="pointer" onClick={() => setShowUserSearch(false)} />
            </div>
            <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
@@ -212,20 +219,24 @@ const Discuss = () => {
 
       {/* MAIN CHAT AREA */}
       <main style={{ flex: 1, display: 'flex', flexDirection: 'column', background: '#001a33' }}>
-         <header style={{ padding: '1rem 2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.05)', background: '#001226' }}>
+         <header style={{ padding: '1.2rem 2.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.05)', background: '#001226', minHeight: '80px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-               <h3 style={{ margin: 0 }}>{activeConversation?.name}</h3>
+               <h2 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 'bold' }}>{activeConversation?.name}</h2>
+               {activeTab.type === 'dm' && <div style={{ width: '8px', height: '8px', background: '#4caf50', borderRadius: '50%' }}></div>}
             </div>
             <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
-               <button onClick={startMeeting} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer' }} title="Private Video Call"><Video size={20} /></button>
-               <button onClick={() => setIsMuted(!isMuted)} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer' }}>
-                 {isMuted ? <BellOff size={20} color="var(--text-dim)" /> : <Bell size={20} color="var(--primary)" />}
+               <button onClick={startMeeting} className="btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '0.6rem 1.2rem', borderRadius: '30px' }}>
+                 <Video size={20} /> <span style={{ fontWeight: 'bold' }}>START VIDEO CALL</span>
                </button>
-               <button onClick={() => setShowSettings(!showSettings)} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer' }}><Settings size={20} /></button>
+               <div style={{ width: '1px', height: '24px', background: 'rgba(255,255,255,0.1)' }}></div>
+               <button onClick={() => setIsMuted(!isMuted)} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer' }}>
+                 {isMuted ? <BellOff size={22} color="var(--text-dim)" /> : <Bell size={22} color="var(--primary)" />}
+               </button>
+               <button onClick={() => setShowSettings(!showSettings)} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer' }}><Settings size={22} /></button>
             </div>
          </header>
 
-         <div style={{ flex: 1, overflowY: 'auto', padding: '2rem' }}>
+         <div style={{ flex: 1, overflowY: 'auto', padding: '2.5rem' }}>
             {messages.length === 0 && (
               <div style={{ textAlign: 'center', padding: '10rem 0', opacity: 0.2 }}>
                 <MessageSquare size={80} style={{ marginBottom: '1.5rem' }} />
@@ -233,20 +244,28 @@ const Discuss = () => {
               </div>
             )}
             {messages.map((m) => (
-              <div key={m.id} style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', alignSelf: m.senderId === user.uid ? 'flex-end' : 'flex-start' }}>
-                 <img src={m.senderPhoto || `https://ui-avatars.com/api/?name=${m.senderName}`} style={{ width: '36px', height: '36px', borderRadius: '10px' }} alt="" />
+              <div key={m.id} style={{ display: 'flex', gap: '1.2rem', marginBottom: '2rem', maxWidth: '80%', alignSelf: m.senderId === user.uid ? 'flex-end' : 'flex-start' }}>
+                 <img src={m.senderPhoto || `https://ui-avatars.com/api/?name=${m.senderName}`} style={{ width: '40px', height: '40px', borderRadius: '12px' }} alt="" />
                  <div>
-                    <div style={{ display: 'flex', gap: '0.8rem', alignItems: 'baseline', marginBottom: '0.3rem' }}>
-                       <span style={{ fontWeight: 'bold', fontSize: '0.9rem' }}>{m.senderName}</span>
-                       <span style={{ fontSize: '0.7rem', opacity: 0.4 }}>{m.createdAt?.toDate ? m.createdAt.toDate().toLocaleTimeString() : '...'}</span>
+                    <div style={{ display: 'flex', gap: '0.8rem', alignItems: 'baseline', marginBottom: '0.4rem' }}>
+                       <span style={{ fontWeight: 'bold', fontSize: '0.95rem' }}>{m.senderName}</span>
+                       <span style={{ fontSize: '0.75rem', opacity: 0.4 }}>{m.createdAt?.toDate ? m.createdAt.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '...'}</span>
                     </div>
                     {m.isCall ? (
-                      <div className="call-invite" style={{ background: 'rgba(242, 153, 0, 0.1)', border: '1px solid var(--primary)', padding: '1rem', borderRadius: '12px', display: 'inline-block' }}>
-                        <p style={{ margin: '0 0 0.8rem 0', fontSize: '0.85rem' }}>Meeting starting now...</p>
-                        <a href={m.callUrl} target="_blank" rel="noreferrer" className="btn-primary" style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem', textDecoration: 'none' }}>JOIN MEETING</a>
+                      <div className="call-invite" style={{ background: 'rgba(242, 153, 0, 0.1)', border: '1px solid var(--primary)', padding: '1.2rem', borderRadius: '15px', display: 'inline-block' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '1rem' }}>
+                          <Video color="var(--primary)" size={30} />
+                          <div>
+                            <p style={{ margin: 0, fontWeight: 'bold', fontSize: '1rem' }}>Private Video Call</p>
+                            <p style={{ margin: 0, fontSize: '0.8rem', opacity: 0.7 }}>Invite sent to {activeConversation?.name}</p>
+                          </div>
+                        </div>
+                        <a href={m.callUrl} target="_blank" rel="noreferrer" className="btn-primary" style={{ padding: '0.6rem 1.2rem', fontSize: '0.9rem', textDecoration: 'none', display: 'block', textAlign: 'center' }}>JOIN MEETING NOW</a>
                       </div>
                     ) : (
-                      <p style={{ fontSize: '0.95rem', margin: 0, color: 'rgba(255,255,255,0.9)', lineHeight: 1.5 }}>{m.text}</p>
+                      <div style={{ background: m.senderId === user.uid ? 'rgba(242, 153, 0, 0.1)' : 'rgba(255,255,255,0.03)', padding: '1rem 1.2rem', borderRadius: '15px', border: m.senderId === user.uid ? '1px solid rgba(242,153,0,0.2)' : '1px solid rgba(255,255,255,0.05)' }}>
+                        <p style={{ fontSize: '1rem', margin: 0, color: 'rgba(255,255,255,0.95)', lineHeight: 1.6 }}>{m.text}</p>
+                      </div>
                     )}
                  </div>
               </div>
@@ -254,34 +273,26 @@ const Discuss = () => {
             <div ref={scrollRef} />
          </div>
 
-         {/* SETTINGS MODAL */}
-         {showSettings && (
-           <div style={{ position: 'fixed', top: '80px', right: '20px', width: '300px', background: '#002d5a', borderRadius: '15px', border: '1px solid var(--glass-border)', padding: '1.5rem', boxShadow: '0 10px 30px rgba(0,0,0,0.5)', zIndex: 100 }}>
-              <h3 style={{ marginBottom: '1rem' }}>Chat Settings</h3>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: '0.85rem' }}>Desktop Notifications</span>
-                    <input type="checkbox" checked={!isMuted} readOnly />
-                 </div>
-                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: '0.85rem' }}>Email Digests</span>
-                    <input type="checkbox" />
-                 </div>
-                 <button className="btn-ghost" style={{ marginTop: '1rem', width: '100%', borderColor: '#f44336', color: '#f44336' }}>Close Chat</button>
-              </div>
+         {/* EMOJI SELECTOR */}
+         {showEmojis && (
+           <div style={{ position: 'absolute', bottom: '100px', left: '2rem', background: '#002244', border: '1px solid var(--primary)', borderRadius: '15px', padding: '1rem', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.5rem', zIndex: 100, boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }}>
+              {emojis.map(e => (
+                <button key={e} onClick={() => addEmoji(e)} style={{ background: 'none', border: 'none', fontSize: '1.8rem', cursor: 'pointer', padding: '0.5rem', transition: '0.2s' }} className="emoji-btn">{e}</button>
+              ))}
            </div>
          )}
 
-         <form onSubmit={handleSendMessage} style={{ padding: '1.5rem 2rem', borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', gap: '1rem' }}>
-            <label className="btn-ghost" style={{ padding: '0.8rem' }}><Paperclip size={20} /><input type="file" style={{ display: 'none' }} /></label>
+         <form onSubmit={handleSendMessage} style={{ padding: '1.5rem 2.5rem', borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', gap: '1.2rem', position: 'relative' }}>
+            <button type="button" onClick={() => setShowEmojis(!showEmojis)} className="btn-ghost" style={{ padding: '0.8rem', borderRadius: '50%' }}><Smile size={24} color={showEmojis ? 'var(--primary)' : 'white'} /></button>
+            <label className="btn-ghost" style={{ padding: '0.8rem', borderRadius: '50%' }}><Paperclip size={24} /><input type="file" style={{ display: 'none' }} /></label>
             <input 
               className="chat-input" 
               placeholder={`Message ${activeConversation?.name}...`} 
               value={newMessage} 
               onChange={(e) => setNewMessage(e.target.value)} 
-              style={{ flex: 1, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', padding: '0.8rem 1.2rem', borderRadius: '12px', color: 'white', outline: 'none' }}
+              style={{ flex: 1, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', padding: '1rem 1.5rem', borderRadius: '15px', color: 'white', outline: 'none', fontSize: '1rem' }}
             />
-            <button type="submit" className="btn-primary" style={{ padding: '0 1.5rem' }}><Send size={20} /></button>
+            <button type="submit" className="btn-primary" style={{ width: '60px', height: '60px', borderRadius: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Send size={24} /></button>
          </form>
       </main>
 
