@@ -120,14 +120,17 @@ const Discuss = () => {
     }
   };
 
+  const [showVideo, setShowVideo] = useState(false);
+  const [videoUrl, setVideoUrl] = useState('');
+
   const handleStartVideo = () => {
     const roomId = activeTab.type === 'dm' 
-      ? `DHLC_DAVAO_DM_${[user.uid, activeTab.id].sort().join('_')}`
-      : `DHLC_DAVAO_CHANNEL_${activeTab.id}`;
+      ? `DHLC-Davao-DM-${[user.uid, activeTab.id].sort().join('-')}`
+      : `DHLC-Davao-Channel-${activeTab.id}`;
     
-    // Optimized URL to hide promotional banners and skip technical pre-join steps
-    const jitsiUrl = `https://meet.jit.si/${roomId}#config.prejoinPageEnabled=false&config.chromeExtensionBanner=null&interfaceConfigOverwrite.SHOW_PROMOTIONAL_CLOSE_PAGE=false&config.hideConferenceTimer=true`;
-    window.open(jitsiUrl, '_blank');
+    // We use the mobile-optimized IFrame view for that Odoo native feel
+    setVideoUrl(`https://meet.jit.si/${roomId}#config.prejoinPageEnabled=false&config.chromeExtensionBanner=null&config.hideConferenceTimer=true&config.startWithAudioMuted=true`);
+    setShowVideo(true);
   };
 
   const selectChat = (type, id, data) => {
@@ -143,6 +146,29 @@ const Discuss = () => {
   return (
     <div style={{ background: DHLC_NAVY, height: '100vh', display: 'flex', overflow: 'hidden', paddingTop: '80px', color: 'white', fontFamily: "sans-serif" }}>
       
+      {/* NATIVE VIDEO OVERLAY (ODOO STYLE) */}
+      {showVideo && (
+        <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'black', zIndex: 9999, display: 'flex', flexDirection: 'column' }}>
+           <div style={{ padding: '1rem 2rem', background: DHLC_DARKER, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid '+DHLC_GOLD }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                 <Video size={20} color={DHLC_GOLD} />
+                 <span style={{ fontWeight: 'bold', fontSize: '0.9rem' }}>MINISTRY VIDEO CALL - {activeConversation?.name?.toUpperCase()}</span>
+              </div>
+              <button 
+                onClick={() => setShowVideo(false)} 
+                style={{ background: 'red', border: 'none', color: 'white', padding: '0.5rem 1.5rem', borderRadius: '20px', fontWeight: 'bold', cursor: 'pointer' }}
+              >
+                END CALL
+              </button>
+           </div>
+           <iframe 
+             src={videoUrl} 
+             allow="camera; microphone; display-capture; autoplay; clipboard-write; fullscreen" 
+             style={{ flex: 1, border: 'none' }}
+             title="DHLC Video Call"
+           />
+        </div>
+      )}
       {/* SIDEBAR */}
       <aside style={{ width: showSidebar ? '300px' : '0px', minWidth: showSidebar ? '300px' : '0', background: DHLC_DARKER, borderRight: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', transition: '0.3s ease', overflow: 'hidden', position: window.innerWidth <= 768 ? 'fixed' : 'relative', height: '100%', zIndex: 1000 }}>
         <div style={{ padding: '1.5rem', borderBottom: '1px solid rgba(255,255,255,0.05)' }}><h2 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 'bold' }}>DISCUSS</h2></div>
