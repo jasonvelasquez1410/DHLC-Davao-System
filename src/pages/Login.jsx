@@ -29,11 +29,17 @@ const Login = () => {
     let role = 'member';
     const name = user.displayName || 'New Member';
 
-    // VIP Global Admin Promotion (Head Pastors)
+    // VIP Global Admin Promotion (Master Admins)
     const adminEmails = ['admin@dhlc.com', 'gmcebana.auditor@gmail.com'];
+    
+    // VIP Leadership List (Add Leader emails here for auto-promotion)
+    const vipLeaders = ['regieglenn@gmail.com', 'jasonvelasquez1410@gmail.com']; 
+
     if (adminEmails.includes(user.email)) {
       role = 'admin';
-    } 
+    } else if (vipLeaders.includes(user.email)) {
+      role = 'leader';
+    }
     // Minister Promotion
     else if (ministersList.some(m => name.toLowerCase().includes(m.toLowerCase()))) {
       role = 'leader';
