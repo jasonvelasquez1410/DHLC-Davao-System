@@ -105,7 +105,7 @@ const Login = () => {
     setError('');
     try {
       // --- Master Admin Bypass for Testing ---
-      if (email === 'admin@dhlc.com' && password === 'dhlcadmin2024') {
+      if (email === 'admin@dhlc.com' && password === 'dhlc2026') {
         const masterData = { 
           uid: 'master-admin-001', 
           email: 'admin@dhlc.com', 
