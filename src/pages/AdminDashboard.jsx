@@ -115,6 +115,15 @@ const AdminDashboard = () => {
     }
   };
 
+  const handleUpdateRole = async (userId, newRole) => {
+    try {
+      await updateDoc(doc(db, 'users', userId), { role: newRole });
+      fetchData(); // Refresh list to show change
+    } catch (err) {
+      alert("Permission denied or update failed.");
+    }
+  };
+
   const startScanner = () => {
     setScanning(true);
     setScanResult(null);
@@ -241,12 +250,24 @@ const AdminDashboard = () => {
               </div>
               <div style={{ overflowX: 'auto' }}>
                  <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                    <thead><tr style={{ textAlign: 'left', opacity: 0.5, borderBottom: '1px solid rgba(255,255,255,0.05)' }}><th>NAME</th><th>ROLE</th><th>ACTION</th></tr></thead>
+                    <thead><tr style={{ textAlign: 'left', opacity: 0.5, borderBottom: '1px solid rgba(255,255,255,0.05)' }}><th>NAME</th><th>ROLE / LEVEL</th><th>ACTION</th></tr></thead>
                     <tbody>
                        {filteredMembers.map(m => (
                           <tr key={m.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.02)' }}>
                              <td style={{ padding: '1rem 0' }}><b>{m.name}</b></td>
-                             <td>{m.role}</td>
+                             <td>
+                                <select 
+                                   value={m.role || 'member'} 
+                                   onChange={(e) => handleUpdateRole(m.id, e.target.value)}
+                                   style={{ background: 'rgba(242,153,0,0.1)', border: '1px solid rgba(242,153,0,0.2)', color: 'white', padding: '0.3rem', borderRadius: '5px', fontSize: '0.8rem' }}
+                                   disabled={user.email !== 'dhlc.minister@gmail.com'}
+                                >
+                                   <option value="member">Member</option>
+                                   <option value="leader">Leader</option>
+                                   <option value="minister">Minister</option>
+                                   <option value="admin">Admin Hub</option>
+                                </select>
+                             </td>
                              <td><button onClick={() => {setSelectedMember(m); setShowMemberID(true);}} className="btn-ghost" style={{ fontSize: '0.8rem' }}><Scan size={14} /> VIEW QR</button></td>
                           </tr>
                        ))}
