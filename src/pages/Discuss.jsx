@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { db } from '../lib/firebase';
-import { collection, addDoc, query, where, orderBy, onSnapshot, serverTimestamp, getDocs, limit, doc, updateDoc } from 'firebase/firestore';
+import { collection, addDoc, query, where, orderBy, onSnapshot, serverTimestamp, getDocs, limit, doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { useAuth } from '../App';
 import { 
   Send, Hash, Users, MessageSquare, Video, 
   Phone, Paperclip, Smile, Plus, Info, Bell, BellOff,
   Settings, Music, Wrench, File, Star,
-  Shield, Camera, Heart, Briefcase, Baby, Download, X, Search, Menu
+  Shield, Camera, Heart, Briefcase, Baby, Download, X, Search, Menu, Trash2
 } from 'lucide-react';
 
 const DHLC_NAVY = '#001a33';
@@ -110,6 +110,16 @@ const Discuss = () => {
     }
   };
 
+  const handleDeleteMessage = async (id) => {
+    if (window.confirm("Permanently remove this message?")) {
+      try {
+        await deleteDoc(doc(db, 'messages', id));
+      } catch (err) {
+        alert("Error deleting message.");
+      }
+    }
+  };
+
   const handleStartVideo = () => {
     const roomId = activeTab.type === 'dm' 
       ? `DHLC_DAVAO_DM_${[user.uid, activeTab.id].sort().join('_')}`
@@ -179,10 +189,15 @@ const Discuss = () => {
               </div>
             )}
             {messages.map(m => (
-              <div key={m.id} style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', justifyContent: m.senderId === user.uid ? 'flex-end' : 'flex-start' }}>
+              <div key={m.id} style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', justifyContent: m.senderId === user.uid ? 'flex-end' : 'flex-start', group: 'true' }}>
                  {m.senderId !== user.uid && <img src={m.senderPhoto || `https://ui-avatars.com/api/?name=${m.senderName}`} style={{ width: '32px', height: '32px', borderRadius: '8px' }} alt="" />}
-                 <div style={{ background: m.senderId === user.uid ? 'rgba(242, 153, 0, 0.1)' : 'rgba(255,255,255,0.05)', padding: '0.8rem 1.2rem', borderRadius: '15px', maxWidth: '70%', border: '1px solid rgba(255,255,255,0.05)' }}>
-                    <p style={{ margin: '0 0 0.3rem 0', fontWeight: 'bold', fontSize: '0.7rem', color: DHLC_GOLD }}>{m.senderName}</p>
+                 <div style={{ position: 'relative', background: m.senderId === user.uid ? 'rgba(242, 153, 0, 0.1)' : 'rgba(255,255,255,0.05)', padding: '0.8rem 1.2rem', borderRadius: '15px', maxWidth: '70%', border: '1px solid rgba(255,255,255,0.05)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                       <p style={{ margin: '0 0 0.3rem 0', fontWeight: 'bold', fontSize: '0.7rem', color: DHLC_GOLD }}>{m.senderName}</p>
+                       {(m.senderId === user.uid || user.email === 'dhlc.minister@gmail.com') && (
+                          <button onClick={() => handleDeleteMessage(m.id)} className="btn-ghost" style={{ padding: '2px', opacity: 0.3, background: 'none' }} title="Delete Message"><Trash2 size={12} /></button>
+                       )}
+                    </div>
                     <p style={{ margin: 0, fontSize: '0.95rem', lineHeight: '1.4' }}>{m.text}</p>
                  </div>
               </div>
