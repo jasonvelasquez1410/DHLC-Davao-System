@@ -25,41 +25,46 @@ const Login = () => {
   const handleAutoPromote = async (user) => {
     const userDocRef = doc(db, 'users', user.uid);
     const userSnap = await getDoc(userDocRef);
+    const name = user.displayName || 'New Member';
+    const email = (user.email || "").toLowerCase();
     
     let role = 'member';
-    const name = user.displayName || 'New Member';
 
     // VIP Global Admin Promotion (Master Admins)
     const adminEmails = ['admin@dhlc.com', 'gmcebana.auditor@gmail.com'];
     
-    // VIP Leadership List (Add Leader emails here for auto-promotion)
+    // VIP Leadership List (Lowercased for safety)
     const vipLeaders = ['regieglenn@gmail.com', 'jasonvelasquez1410@gmail.com']; 
 
-    if (adminEmails.includes(user.email)) {
+    if (adminEmails.includes(email)) {
       role = 'admin';
-    } else if (vipLeaders.includes(user.email)) {
+    } else if (vipLeaders.includes(email)) {
       role = 'leader';
     }
-    // Minister Promotion
+    // Minister Promotion check
     else if (ministersList.some(m => name.toLowerCase().includes(m.toLowerCase()))) {
       role = 'leader';
     }
 
+    // Force promotion: If existing data says 'member' but logic says they are VIP
+    const existingRole = userSnap.exists() ? userSnap.data().role : 'member';
+    const finalRole = (role !== 'member') ? role : existingRole;
+
     const userData = {
       uid: user.uid,
       name: name,
-      email: user.email,
-      role: role,
+      email: email,
+      role: finalRole,
       photoURL: user.photoURL || null,
       lastLogin: serverTimestamp()
     };
 
-    // Only update if it doesn't exist or if we are promoting
-    if (!userSnap.exists() || role !== 'member') {
+    // Save/Update if VIP or New
+    if (!userSnap.exists() || finalRole !== existingRole) {
       await setDoc(userDocRef, userData, { merge: true });
     }
 
-    return { ...userData, ...userSnap.data(), role: userSnap.exists() ? (userSnap.data().role !== 'member' ? userSnap.data().role : role) : role };
+    return userData;
   };
 
   const handleGoogleLogin = async () => {
@@ -100,7 +105,7 @@ const Login = () => {
     setError('');
     try {
       // --- Master Admin Bypass for Testing ---
-      if (email === 'admin@dhlc.com' && password === 'dhlc2026') {
+      if (email === 'admin@dhlc.com' && password === 'dhlcadmin2024') {
         const masterData = { 
           uid: 'master-admin-001', 
           email: 'admin@dhlc.com', 
