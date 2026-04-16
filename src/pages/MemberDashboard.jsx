@@ -4,6 +4,7 @@ import { collection, query, where, getDocs, orderBy, limit, doc, setDoc } from '
 import { useAuth } from '../App';
 import { QRCodeCanvas } from 'qrcode.react';
 import { User, Mail, Award, Calendar, ExternalLink, QrCode } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 const MemberDashboard = () => {
   const { user } = useAuth();
@@ -11,13 +12,14 @@ const MemberDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [editingProfile, setEditingProfile] = useState(false);
   const [profileData, setProfileData] = useState({
-    name: user.name || '',
-    phone: user.phone || '',
-    family: user.family || ''
+    name: user?.name || '',
+    phone: user?.phone || '',
+    family: user?.family || ''
   });
 
   useEffect(() => {
     const fetchHistory = async () => {
+      if (!user?.uid) return;
       try {
         const q = query(
           collection(db, 'attendance'), 
@@ -33,7 +35,7 @@ const MemberDashboard = () => {
         setLoading(false);
       }
     };
-    if (user?.uid) fetchHistory();
+    fetchHistory();
   }, [user?.uid]);
 
   const downloadQR = () => {
@@ -42,36 +44,36 @@ const MemberDashboard = () => {
     const pngUrl = canvas.toDataURL("image/png").replace("image/png", "image/octet-stream");
     let downloadLink = document.createElement("a");
     downloadLink.href = pngUrl;
-    downloadLink.download = `${user.name.replace(/\s+/g, '_')}_DHLC_Attendance_QR.png`;
+    downloadLink.download = `${(user?.name || 'Member').replace(/\s+/g, '_')}_DHLC_ID.png`;
     document.body.appendChild(downloadLink);
     downloadLink.click();
     document.body.removeChild(downloadLink);
   };
 
+  if (!user) return <div style={{ color: 'white', paddingTop: '150px', textAlign: 'center' }}>Please sign in to view your dashboard.</div>;
+
   return (
-    <div className="container" style={{ paddingTop: '120px', paddingBottom: '60px' }}>
+    <div className="container" style={{ paddingTop: '120px', paddingBottom: '60px', color: 'white' }}>
       <div className="animate-fade-in">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '3rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '3rem', flexWrap: 'wrap', gap: '1rem' }}>
           <div>
             <h1 className="font-serif" style={{ fontSize: '3rem' }}>Member <span className="text-gradient">Portal</span></h1>
-            <p style={{ color: 'var(--text-dim)' }}>Welcome back, {user.name}. Your spiritual journey is our priority.</p>
+            <p style={{ color: 'var(--text-dim)' }}>Welcome back, {user.name}. View your digital ID and attendance history.</p>
           </div>
-          <div style={{ padding: '0.8rem 1.5rem', background: 'var(--glass)', borderRadius: '15px', border: '1px solid var(--glass-border)' }}>
-             <span style={{ color: 'var(--primary)', fontWeight: 'bold' }}>Status: Active Member</span>
+          <div style={{ padding: '0.8rem 1.5rem', background: 'rgba(242, 153, 0, 0.1)', borderRadius: '15px', border: '1px solid var(--primary)' }}>
+             <span style={{ color: 'var(--primary)', fontWeight: 'bold' }}>Active Member</span>
           </div>
         </div>
 
-        {/* Profile Update Form / Display */}
+        {/* PROFILE SECTION */}
         <div className="premium-card" style={{ marginBottom: '2rem' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
             <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <User size={20} color="var(--primary)" /> Personal Directory Info
+              <User size={20} color="var(--primary)" /> Profile Details
             </h3>
-            {!editingProfile && (
-              <button className="btn-ghost" onClick={() => setEditingProfile(true)} style={{ padding: '0.5rem 1rem', fontSize: '0.9rem' }}>
-                ✏️ Edit Profile
-              </button>
-            )}
+            <button className="btn-ghost" onClick={() => setEditingProfile(!editingProfile)} style={{ padding: '0.5rem 1rem' }}>
+               {editingProfile ? 'Cancel' : 'Edit Profile'}
+            </button>
           </div>
 
           {editingProfile ? (
@@ -81,142 +83,69 @@ const MemberDashboard = () => {
                 const userRef = doc(db, 'users', user.uid);
                 await setDoc(userRef, profileData, { merge: true });
                 setEditingProfile(false);
-                alert("Profile verified and updated!");
-              } catch (err) {
-                alert("Failed to update.");
-              }
+                alert("Profile Updated!");
+              } catch (err) { alert("Error saving."); }
             }} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                <div>
-                  <label style={{ fontSize: '0.8rem', color: 'var(--text-dim)', marginBottom: '0.3rem', display: 'block' }}>Official Full Name</label>
-                  <input type="text" value={profileData.name} onChange={(e) => setProfileData({...profileData, name: e.target.value})} style={{ width: '100%', padding: '0.8rem', background: 'var(--glass)', border: '1px solid var(--glass-border)', color: 'white', borderRadius: '8px' }} required />
-                </div>
-                <div>
-                  <label style={{ fontSize: '0.8rem', color: 'var(--text-dim)', marginBottom: '0.3rem', display: 'block' }}>Contact Number</label>
-                  <input type="tel" value={profileData.phone} onChange={(e) => setProfileData({...profileData, phone: e.target.value})} placeholder="09XX-XXX-XXXX" style={{ width: '100%', padding: '0.8rem', background: 'var(--glass)', border: '1px solid var(--glass-border)', color: 'white', borderRadius: '8px' }} required />
-                </div>
-                <div style={{ gridColumn: '1 / -1' }}>
-                  <label style={{ fontSize: '0.8rem', color: 'var(--text-dim)', marginBottom: '0.3rem', display: 'block' }}>Family Name (For Church Records)</label>
-                  <input type="text" value={profileData.family} onChange={(e) => setProfileData({...profileData, family: e.target.value})} placeholder="e.g. Tolentino Family" style={{ width: '100%', padding: '0.8rem', background: 'var(--glass)', border: '1px solid var(--glass-border)', color: 'white', borderRadius: '8px' }} />
-                </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
+                <input type="text" value={profileData.name} onChange={(e) => setProfileData({...profileData, name: e.target.value})} placeholder="Full Name" style={{ padding: '0.8rem', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', borderRadius: '8px' }} />
+                <input type="text" value={profileData.phone} onChange={(e) => setProfileData({...profileData, phone: e.target.value})} placeholder="Phone Number" style={{ padding: '0.8rem', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', borderRadius: '8px' }} />
               </div>
-              <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
-                 <button type="submit" className="btn-primary" style={{ padding: '0.6rem 1.5rem' }}>Save Changes</button>
-                 <button type="button" className="btn-ghost" onClick={() => setEditingProfile(false)} style={{ padding: '0.6rem 1.5rem' }}>Cancel</button>
-              </div>
+              <button type="submit" className="btn-primary" style={{ width: 'fit-content', padding: '0.6rem 2rem' }}>Save Changes</button>
             </form>
           ) : (
-            <div style={{ display: 'flex', gap: '3rem', flexWrap: 'wrap' }}>
-               <div>
-                 <p style={{ fontSize: '0.8rem', color: 'var(--text-dim)' }}>Name</p>
-                 <p style={{ fontWeight: 'bold' }}>{profileData.name || 'Not set'}</p>
-               </div>
-               <div>
-                 <p style={{ fontSize: '0.8rem', color: 'var(--text-dim)' }}>Contact Number</p>
-                 <p style={{ fontWeight: 'bold' }}>{profileData.phone || 'Not provided'}</p>
-               </div>
-               <div>
-                 <p style={{ fontSize: '0.8rem', color: 'var(--text-dim)' }}>Family Group</p>
-                 <p style={{ fontWeight: 'bold' }}>{profileData.family || 'Not specified'}</p>
-               </div>
+            <div style={{ display: 'flex', gap: '3rem', flexWrap: 'wrap', opacity: 0.8 }}>
+               <div><p style={{ fontSize: '0.7rem', color: 'var(--primary)', margin: 0 }}>FULL NAME</p><p style={{ fontWeight: 'bold' }}>{user.name}</p></div>
+               <div><p style={{ fontSize: '0.7rem', color: 'var(--primary)', margin: 0 }}>EMAIL ADDRESS</p><p style={{ fontWeight: 'bold' }}>{user.email}</p></div>
+               <div><p style={{ fontSize: '0.7rem', color: 'var(--primary)', margin: 0 }}>PHONE</p><p style={{ fontWeight: 'bold' }}>{user.phone || 'Not set'}</p></div>
             </div>
           )}
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '2rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}>
           
-          {/* Profile Section */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-            <div className="premium-card">
-              <div style={{ display: 'flex', alignItems: 'center', gap: '2rem', marginBottom: '2.5rem' }}>
-                <div style={{ width: '100px', height: '100px', borderRadius: '50%', background: 'linear-gradient(135deg, var(--secondary), var(--bg-dark))', border: '2px solid var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)', boxShadow: '0 0 20px var(--primary-glow)' }}>
-                  <User size={50} />
-                </div>
-                <div>
-                  <h2 style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>{user.name}</h2>
-                  <p style={{ color: 'var(--text-dim)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <Mail size={16} /> {user.email}
-                  </p>
-                </div>
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
-                <div style={{ padding: '1.5rem', background: 'rgba(255,255,255,0.02)', borderRadius: '15px', border: '1px solid var(--glass-border)' }}>
-                  <p style={{ fontSize: '0.8rem', color: 'var(--text-dim)', marginBottom: '0.5rem' }}>CELL GROUP</p>
-                  <h4 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <Users size={18} color="var(--primary)" /> {user.groupId || 'Assigning...'}
-                  </h4>
-                </div>
-                <div style={{ padding: '1.5rem', background: 'rgba(255,255,255,0.02)', borderRadius: '15px', border: '1px solid var(--glass-border)' }}>
-                  <p style={{ fontSize: '0.8rem', color: 'var(--text-dim)', marginBottom: '0.5rem' }}>MEMBER SINCE</p>
-                  <h4 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <Calendar size={18} color="var(--primary)" /> 2024
-                  </h4>
-                </div>
-              </div>
+          {/* QR CODE ID CARD */}
+          <div className="premium-card" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', background: 'linear-gradient(135deg, rgba(242,153,0,0.05), transparent)' }}>
+            <div style={{ width: '60px', height: '60px', background: 'var(--primary)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.5rem', boxShadow: '0 10px 30px rgba(242,153,0,0.3)' }}>
+               <QrCode color="black" size={30} />
             </div>
+            <h2 className="font-serif">Attendance QR</h2>
+            <p style={{ color: 'var(--text-dim)', fontSize: '0.9rem', marginBottom: '2rem' }}>Show this code to the attendant upon entry.</p>
+            
+            <div style={{ background: 'white', padding: '1.2rem', borderRadius: '20px', boxShadow: '0 20px 40px rgba(0,0,0,0.5)' }}>
+               <QRCodeCanvas id="qr-canvas" value={user.uid} size={180} />
+            </div>
+            
+            <button onClick={downloadQR} className="btn-primary" style={{ marginTop: '2rem', width: '100%' }}>Download Digital ID</button>
+          </div>
 
-            <div className="premium-card">
+          {/* ATTENDANCE HISTORY */}
+          <div className="premium-card">
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-                <h3>Recent Attendance</h3>
-                <Link to="#" style={{ color: 'var(--primary)', fontSize: '0.9rem', textDecoration: 'none' }}>View All</Link>
+                 <h3 style={{ margin: 0 }}>My History</h3>
+                 <span style={{ fontSize: '0.8rem', opacity: 0.5 }}>Last 10 Records</span>
               </div>
               
               {history.length > 0 ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                  {history.map((record) => (
-                    <div key={record.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '1rem', background: 'rgba(255,255,255,0.01)', borderRadius: '12px', border: '1px solid var(--glass-border)' }}>
-                      <div>
-                        <p style={{ fontWeight: '600' }}>{record.service || 'Sunday Service'}</p>
-                        <p style={{ fontSize: '0.8rem', color: 'var(--text-dim)' }}>Checked in by Church Admin</p>
-                      </div>
-                      <div style={{ textAlign: 'right' }}>
-                        <p style={{ color: '#4caf50', fontSize: '0.8rem', fontWeight: 'bold' }}>SUCCESS</p>
-                        <p style={{ fontSize: '0.8rem', color: 'var(--text-dim)' }}>{record.timestamp?.toDate().toLocaleDateString()}</p>
-                      </div>
-                    </div>
-                  ))}
+                   {history.map(record => (
+                     <div key={record.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '1rem', background: 'rgba(255,255,255,0.02)', borderRadius: '15px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                        <div>
+                           <p style={{ fontWeight: 'bold', margin: '0 0 0.2rem 0' }}>{record.service}</p>
+                           <p style={{ fontSize: '0.75rem', opacity: 0.5 }}>Davao Sanctuary</p>
+                        </div>
+                        <div style={{ textAlign: 'right' }}>
+                           <p style={{ color: '#2ecc71', fontWeight: 'bold', fontSize: '0.75rem' }}>PRESENT</p>
+                           <p style={{ fontSize: '0.75rem', opacity: 0.5 }}>{record.timestamp?.toDate().toLocaleDateString()}</p>
+                        </div>
+                     </div>
+                   ))}
                 </div>
               ) : (
-                <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-dim)' }}>
-                  No attendance records found yet.
+                <div style={{ textAlign: 'center', padding: '4rem 0', opacity: 0.3 }}>
+                   <Calendar size={40} style={{ marginBottom: '1rem' }} />
+                   <p>No services attended yet.</p>
                 </div>
               )}
-            </div>
-          </div>
-
-          {/* QR Code Section */}
-          <div className="premium-card" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
-            <div style={{ marginBottom: '2rem' }}>
-              <div style={{ display: 'inline-flex', padding: '1rem', background: 'rgba(242, 153, 0, 0.1)', borderRadius: '50%', color: 'var(--primary)', marginBottom: '1rem' }}>
-                <QrCode size={32} />
-              </div>
-              <h2 className="font-serif">Attendance QR</h2>
-              <p style={{ color: 'var(--text-dim)', fontSize: '0.9rem', maxWidth: '300px', margin: '1rem auto' }}>
-                Scan this code at the usher's station when you enter the church.
-              </p>
-            </div>
-
-            <div className="qr-container" style={{ background: 'white', padding: '1rem', borderRadius: '15px' }}>
-              <QRCodeCanvas 
-                id="qr-canvas"
-                value={user.uid} // Using UID as the QR identifier
-                size={220}
-                level="H"
-                marginSize={4}
-                fgColor="#001226"
-              />
-            </div>
-
-            <div style={{ marginTop: '2rem', width: '100%', padding: '1rem', background: 'rgba(255,255,255,0.02)', borderRadius: '10px', fontSize: '0.8rem', color: 'var(--text-dim)' }}>
-              Unique ID: {user.uid.substring(0, 10)}...
-            </div>
-            
-            <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem', width: '100%' }}>
-              <button className="btn-primary" style={{ flex: 1, justifyContent: 'center' }} onClick={downloadQR}>
-                 Save as Image
-              </button>
-            </div>
           </div>
 
         </div>
