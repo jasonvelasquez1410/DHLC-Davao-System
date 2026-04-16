@@ -111,12 +111,12 @@ const Discuss = () => {
   };
 
   const handleStartVideo = () => {
-    // Generate a unique room name based on the chat ID for privacy
     const roomId = activeTab.type === 'dm' 
       ? `DHLC_DAVAO_DM_${[user.uid, activeTab.id].sort().join('_')}`
       : `DHLC_DAVAO_CHANNEL_${activeTab.id}`;
     
-    const jitsiUrl = `https://meet.jit.si/${roomId}#config.startWithAudioMuted=true&config.startWithVideoMuted=false`;
+    // Optimized URL to hide promotional banners and skip technical pre-join steps
+    const jitsiUrl = `https://meet.jit.si/${roomId}#config.prejoinPageEnabled=false&config.chromeExtensionBanner=null&interfaceConfigOverwrite.SHOW_PROMOTIONAL_CLOSE_PAGE=false&config.hideConferenceTimer=true`;
     window.open(jitsiUrl, '_blank');
   };
 
