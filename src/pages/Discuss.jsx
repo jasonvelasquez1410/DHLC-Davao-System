@@ -54,57 +54,60 @@ const Discuss = () => {
     const unsubscribeUsers = onSnapshot(q, (snap) => {
       setAllUsers(snap.docs.map(doc => ({ uid: doc.id, ...doc.data() })).filter(u => u.uid !== user.uid));
     });
-
     return () => {
       unsubscribeUsers();
       updateDoc(userRef, { isOnline: false }).catch(() => {});
     };
   }, [user?.uid]);
 
+  // ULTIMATE FAIL-SAFE MESSAGE ENGINE
   useEffect(() => {
     if (!user?.uid) return;
-    let q;
-    if (activeTab.type === 'dm') {
-      const dmId = [user.uid, activeTab.id].sort().join('_');
-      q = query(collection(db, 'messages'), where('dmId', '==', dmId), orderBy('createdAt', 'asc'));
-    } else {
-      q = query(collection(db, 'messages'), where('channelId', '==', activeTab.id), orderBy('createdAt', 'asc'));
-    }
+    
+    // We use a query that REQUIRES ZERO INDEXES for maximum reliability
+    const fallbackQ = query(collection(db, 'messages'), limit(200)); 
+    
+    const unsubscribe = onSnapshot(fallbackQ, (snapshot) => {
+      let filtered = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      setMessages(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-      setTimeout(() => scrollRef.current?.scrollIntoView({ behavior: 'smooth' }), 200);
-    }, (error) => {
-      console.warn("Falling back to manual memory filter due to missing index.");
-      const fallbackQ = query(collection(db, 'messages'), orderBy('createdAt', 'asc'), limit(50));
-      onSnapshot(fallbackQ, (snapshot) => {
-        const allMsgs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        if (activeTab.type === 'dm') {
-          const dmId = [user.uid, activeTab.id].sort().join('_');
-          setMessages(allMsgs.filter(m => m.dmId === dmId));
-        } else {
-          setMessages(allMsgs.filter(m => m.channelId === activeTab.id));
-        }
-      });
+      // MANUALLY FILTER AND SORT IN MEMORY (INDEX-INDEPENDENT)
+      if (activeTab.type === 'dm') {
+        const dmId = [user.uid, activeTab.id].sort().join('_');
+        filtered = filtered.filter(m => m.dmId === dmId);
+      } else {
+        filtered = filtered.filter(m => m.channelId === activeTab.id);
+      }
+
+      // Sort by timestamp
+      filtered.sort((a, b) => (a.createdAt?.toMillis ? a.createdAt.toMillis() : 0) - (b.createdAt?.toMillis ? b.createdAt.toMillis() : 0));
+      
+      setMessages(filtered);
+      setTimeout(() => scrollRef.current?.scrollIntoView({ behavior: 'smooth' }), 300);
     });
+
     return () => unsubscribe();
   }, [activeTab, user?.uid]);
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
-    if (!newMessage.trim()) return;
-    const msg = {
-      text: newMessage,
-      senderId: user.uid,
-      senderName: user.name,
-      senderPhoto: user.photoURL || null,
-      createdAt: serverTimestamp()
-    };
-    if (activeTab.type === 'dm') msg.dmId = [user.uid, activeTab.id].sort().join('_');
-    else msg.channelId = activeTab.id;
-    await addDoc(collection(db, 'messages'), msg);
-    setNewMessage('');
-    setTimeout(() => scrollRef.current?.scrollIntoView({ behavior: 'smooth' }), 300);
+    if (!newMessage.trim() || !user?.uid) return;
+
+    try {
+      const msg = {
+        text: newMessage,
+        senderId: user.uid,
+        senderName: user.name || 'Admin',
+        senderPhoto: user.photoURL || null,
+        createdAt: serverTimestamp()
+      };
+      if (activeTab.type === 'dm') msg.dmId = [user.uid, activeTab.id].sort().join('_');
+      else msg.channelId = activeTab.id;
+
+      await addDoc(collection(db, 'messages'), msg);
+      setNewMessage('');
+    } catch (err) {
+      console.error("Error sending message:", err);
+    }
   };
 
   const selectChat = (type, id, data) => {
@@ -146,7 +149,6 @@ const Discuss = () => {
         </div>
       </aside>
 
-      {/* CHAT AREA */}
       <main style={{ flex: 1, display: 'flex', flexDirection: 'column', background: DHLC_NAVY }}>
          <header style={{ padding: '1.2rem 2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: DHLC_DARKER, borderBottom: '1px solid rgba(255,255,255,0.05)', minHeight: '80px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
@@ -160,6 +162,12 @@ const Discuss = () => {
          </header>
 
          <div style={{ flex: 1, overflowY: 'auto', padding: '2rem' }}>
+            {messages.length === 0 && (
+              <div style={{ textAlign: 'center', opacity: 0.2, marginTop: '4rem' }}>
+                <MessageSquare size={60} style={{ marginBottom: '1rem' }} />
+                <h3>No messages yet...</h3>
+              </div>
+            )}
             {messages.map(m => (
               <div key={m.id} style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', justifyContent: m.senderId === user.uid ? 'flex-end' : 'flex-start' }}>
                  {m.senderId !== user.uid && <img src={m.senderPhoto || `https://ui-avatars.com/api/?name=${m.senderName}`} style={{ width: '32px', height: '32px', borderRadius: '8px' }} alt="" />}
@@ -179,14 +187,6 @@ const Discuss = () => {
                <svg viewBox="0 0 24 24" width="22" height="22" stroke="white" strokeWidth="3" fill="none"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" /></svg>
             </button>
          </form>
-         
-         {showEmojis && (
-           <div style={{ position: 'absolute', bottom: '100px', left: '2rem', background: DHLC_DARKER, border: '1px solid '+DHLC_GOLD, borderRadius: '15px', padding: '1rem', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.5rem', zIndex: 2000 }}>
-              {emojis.map(e => (
-                <button key={e} onClick={() => setNewMessage(prev => prev + e)} style={{ background: 'none', border: 'none', fontSize: '1.5rem', cursor: 'pointer' }}>{e}</button>
-              ))}
-           </div>
-         )}
       </main>
 
       {/* SEARCH BOX */}
