@@ -31,14 +31,15 @@ const Login = () => {
     let role = 'member';
 
     // VIP Global Admin Promotion (Master Admins)
-    const adminEmails = ['admin@dhlc.com', 'gmcebana.auditor@gmail.com'];
+    const adminEmails = [
+      'admin@dhlc.com', 
+      'gmcebana.auditor@gmail.com',
+      'jason.velasquez1410@gmail.com',
+      'jasonvelasquez1410@gmail.com'
+    ];
     
-    // VIP Leadership List (Lowercased for safety)
-    const vipLeaders = [
-      'regieglenn@gmail.com', 
-      'jasonvelasquez1410@gmail.com', 
-      'jason.velasquez1410@gmail.com'
-    ]; 
+    // VIP Leadership List (Add Leader emails here for auto-promotion)
+    const vipLeaders = ['regieglenn@gmail.com']; 
 
     if (adminEmails.includes(email)) {
       role = 'admin';
