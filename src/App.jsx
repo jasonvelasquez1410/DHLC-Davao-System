@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, Link } from 'react-router-dom';
-import { LogOut, LayoutDashboard, User, Scan, Users, Menu, X, Globe, LogIn, MessageSquare } from 'lucide-react';
+import { LogOut, LayoutDashboard, User, Scan, Users, Menu, X, Globe, LogIn, MessageSquare, Cloud } from 'lucide-react';
 import LandingPage from './pages/LandingPage';
 import Login from './pages/Login';
 import AdminDashboard from './pages/AdminDashboard';
@@ -8,6 +8,8 @@ import LeaderPortal from './pages/LeaderPortal';
 import MemberDashboard from './pages/MemberDashboard';
 import Discuss from './pages/Discuss';
 import HeadPastorDashboard from './pages/HeadPastorDashboard';
+import CloudDrive from './pages/CloudDrive';
+import Documents from './pages/Documents';
 
 import { auth, db } from './lib/firebase';
 import { onAuthStateChanged, signOut as firebaseSignOut } from 'firebase/auth';
@@ -108,10 +110,18 @@ const Navbar = () => {
             <Link to="/discuss" className="nav-link" style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
               <MessageSquare size={16} /> Discuss
             </Link>
+            <Link to="/cloud" className="nav-link" style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+              <Cloud size={16} /> Cloud Drive
+            </Link>
             {user.role === 'admin' && <Link to="/admin" className="nav-link">Admin Panel</Link>}
             {user.role === 'leader' && <Link to="/leader" className="nav-link">Leader Portal</Link>}
             {user.role === 'member' && <Link to="/member" className="nav-link">Account</Link>}
-            {(user.role === 'head_pastor' || user.role === 'accountant' || user.role === 'admin') && <Link to="/command-center" className="nav-link" style={{color: 'var(--primary)', fontWeight: 'bold'}}>Command Center</Link>}
+            {(user.role === 'head_pastor' || user.role === 'accountant' || user.role === 'admin') && (
+              <>
+                <Link to="/documents" className="nav-link">Records</Link>
+                <Link to="/command-center" className="nav-link" style={{color: 'var(--primary)', fontWeight: 'bold'}}>Command Center</Link>
+              </>
+            )}
             <div style={{ marginRight: '1rem', color: 'var(--text-dim)', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '5px' }}>
               <User size={14} /> <span>Welcome, {user.name?.split(' ')[0]}</span>
             </div>
@@ -160,6 +170,16 @@ function App() {
           <Route path="/command-center" element={
             <ProtectedRoute roles={['head_pastor', 'accountant']}>
               <HeadPastorDashboard />
+            </ProtectedRoute>
+          } />
+          <Route path="/cloud" element={
+            <ProtectedRoute>
+              <CloudDrive />
+            </ProtectedRoute>
+          } />
+          <Route path="/documents" element={
+            <ProtectedRoute roles={['head_pastor', 'accountant', 'admin']}>
+              <Documents />
             </ProtectedRoute>
           } />
         </Routes>

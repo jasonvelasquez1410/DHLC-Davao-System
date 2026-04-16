@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { CheckCircle, Users, QrCode, Shield, ArrowRight } from 'lucide-react';
+import { CheckCircle, Users, QrCode, Shield, ArrowRight, Cloud } from 'lucide-react';
 
 const LandingPage = () => {
   return (
@@ -81,6 +81,11 @@ const LandingPage = () => {
               <CheckCircle style={{ color: 'var(--primary)', marginBottom: '1.5rem' }} size={40} />
               <h3>Quick Scanning</h3>
               <p style={{ color: 'var(--text-dim)' }}>Ushers can scan member codes in seconds, automated attendance logging with zero paperwork.</p>
+            </div>
+            <div className="premium-card">
+              <Cloud style={{ color: 'var(--primary)', marginBottom: '1.5rem' }} size={40} />
+              <h3>Global Sermon Drive</h3>
+              <p style={{ color: 'var(--text-dim)' }}>Access recorded sermon videos from anywhere in the world. Specifically designed for our international members.</p>
             </div>
           </div>
         </div>

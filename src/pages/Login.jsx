@@ -68,8 +68,21 @@ const Login = () => {
       else if (userData.role === 'leader') navigate('/leader');
       else navigate('/member');
     } catch (err) {
-      setError('Google Sign-in failed. Please try again.');
-      console.error(err);
+      console.error("Full Google Sign-in Error:", err);
+      
+      if (err.code === 'auth/popup-closed-by-user') {
+        setError('Sign-in cancelled. Please keep the window open to login.');
+      } else if (err.code === 'auth/cancelled-popup-request') {
+        setError('Sign-in request was cancelled. Please try again.');
+      } else if (err.code === 'auth/unauthorized-domain') {
+        setError('This domain is not authorized for Google Sign-in. Please contact admin to add it to Firebase "Authorized Domains".');
+      } else if (err.code === 'auth/popup-blocked') {
+        setError('Sign-in popup was blocked. Please allow popups for this site.');
+      } else if (err.code === 'auth/operation-not-allowed') {
+        setError('Google Sign-in is not enabled in Firebase Console. Please enable it under Authentication > Sign-in Method.');
+      } else {
+        setError(`Google Sign-in failed: ${err.message || 'Please try again.'}`);
+      }
     } finally {
       setLoading(false);
     }
