@@ -34,7 +34,11 @@ const Login = () => {
     const adminEmails = ['admin@dhlc.com', 'gmcebana.auditor@gmail.com'];
     
     // VIP Leadership List (Lowercased for safety)
-    const vipLeaders = ['regieglenn@gmail.com', 'jasonvelasquez1410@gmail.com']; 
+    const vipLeaders = [
+      'regieglenn@gmail.com', 
+      'jasonvelasquez1410@gmail.com', 
+      'jason.velasquez1410@gmail.com'
+    ]; 
 
     if (adminEmails.includes(email)) {
       role = 'admin';
