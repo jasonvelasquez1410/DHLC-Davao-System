@@ -34,7 +34,7 @@ const AdminDashboard = () => {
   // Dash Labels
   let dashboardTitle = "Admin Hub";
   let dashboardSubtitle = "Manage members, track growth, and oversee church operations.";
-  if (user?.email === 'dhlc.minister@gmail.com') {
+  if (user?.email === 'admin@dhlc.com') {
     dashboardTitle = "Head Pastor Dashboard";
   }
 
@@ -260,7 +260,7 @@ const AdminDashboard = () => {
                                    value={m.role || 'member'} 
                                    onChange={(e) => handleUpdateRole(m.id, e.target.value)}
                                    style={{ background: 'rgba(242,153,0,0.1)', border: '1px solid rgba(242,153,0,0.2)', color: 'white', padding: '0.3rem', borderRadius: '5px', fontSize: '0.8rem' }}
-                                   disabled={user.email !== 'dhlc.minister@gmail.com'}
+                                   disabled={user.email !== 'admin@dhlc.com'}
                                 >
                                    <option value="member">Member</option>
                                    <option value="leader">Leader</option>

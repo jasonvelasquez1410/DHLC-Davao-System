@@ -30,7 +30,7 @@ const Login = () => {
     const name = user.displayName || 'New Member';
 
     // VIP Global Admin Promotion (Head Pastors)
-    const adminEmails = ['admin@dhlc.com', 'dhlc.minister@gmail.com', 'gmcebana.auditor@gmail.com'];
+    const adminEmails = ['admin@dhlc.com', 'gmcebana.auditor@gmail.com'];
     if (adminEmails.includes(user.email)) {
       role = 'admin';
     } 
