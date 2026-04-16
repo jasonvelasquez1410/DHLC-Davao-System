@@ -1,72 +1,43 @@
-# DHLC Davao Church Management System - Project Status (Updated)
+# ⛪ DHLC Davao Church Management System - Mission Log
 
-## 📊 Current Status: Milestone 1.0 Reached 🚀
-The core infrastructure for the Divine Healing Life-Changing Church (DHLC) Davao system is fully implemented and deployed. The system currently features a high-end "Command Center" aesthetics and functional lead-level modules.
-
----
-
-## ✅ Verified Features (Live & Operational)
-- [x] **Ultimate UI Branding**: Navy Blue & Gold "Premium Glassmorphism" theme applied.
-- [x] **Role-Based Portals**: Admin, Head Pastor, Auditor, Leader, and Member portals are active.
-- [x] **Discuss & Video Conferencing**: Real-time chat and Jitsi video calling for leadership.
-- [x] **Cloud Drive & Sermon Archive**: Integrated Google Workspace access for global members.
-- [x] **Retention System (MIA)**: Live automated alerts for absentee members.
-- [x] **Divinity Class Tracker**: Real-time certification progress for all ministers.
-- [x] **Firebase Infrastructure**: End-to-end data sync with Firestore and Storage.
-- [x] **Automated Backups**: Verified `backup.js` utility.
+## 🛡️ Current Status: STABLE & DEPLOYED
+**Last Sync:** April 16, 2026 (20:53 UTC)
+**Admin Hub URL:** [dhlcdavaocity.vercel.app/admin](https://dhlcdavaocity.vercel.app/admin)
 
 ---
 
-## 📅 Status: System Fully Integrated 🚀
-**Current Task**: Final hand-off. The system is no longer using mock data and is running on live Firestore collections.
+## ✅ Completed Milestones
 
-**Next suggested steps:**
-1. **Public Launch**: Share the system URL with the congregation.
-2. **Global Connection**: Hard-code the final sermon video Google Drive link once available.
+### 1. 🏰 Mission Command (Admin Hub)
+- **Master Admin Access**: `admin@dhlc.com` (Bypass Password: `dhlc2026`).
+- **VIP Auto-Promotion**: Google accounts for **Jason Velasquez** and **Regie Glenn** are now automatically recognized as "Master Admins" on every login.
+- **Role Control**: Adimns can now promote any member (Leader, Minister, Admin) directly from the Directory tab using the high-contrast role switcher.
+- **Attendance Scanner**: Fully functional QR-based scanner linked to the Master Schedule.
 
----
+### 2. 💬 Communication Hub (Discuss)
+- **Odoo-Style Video Call**: Implemented a native in-app video overlay (no new tabs) for superior mobile stability.
+- **Emergency Message Engine**: Rewritten to bypass Firebase Search Indexes. Messages now appear **instantly** even if the database is busy.
+- **Moderation Tools**: Admins can now permanently delete any message or test log from the chat channels.
+- **Presence Indicators**: Real-time "Online" status dots for all ministry members.
 
-## 🔑 Firebase Configuration (Active)
-```javascript
-const firebaseConfig = {
-  apiKey: "AIzaSyDBWurvGNq_ld0BMqUlhzs0sKRrU8CBUD8",
-  authDomain: "dhlc-davao-system.firebaseapp.com",
-  projectId: "dhlc-davao-system",
-  storageBucket: "dhlc-davao-system.firebasestorage.app",
-  messagingSenderId: "695103836847",
-  appId: "1:695103836847:web:f126abb2d96979f23bba5a"
-};
-```
+### 3. 📅 Operations Hub
+- **Master Schedule Ledger**: Admins can pre-plan "Divinity Nights" or "Special Events" as the basis for the Scanner.
+- **Digital ID System**: Unique QR codes generated for every member upon enrollment.
 
 ---
 
-## 🚀 Launch Instructions (Messenger Template)
+## 🚀 Upcoming Priorities
 
-**Recipient**: Pastor Glenn Ebana
-
-Blessed day, Pastor Glenn! 🙌 The **DHLC Davao Church System** is officially live and ready for testing! 🚀
-
-**System URL**: `[INSERT YOUR NEW DOMAIN URL HERE]`
-
----
-
-**👑 FOR YOU & PASTOR GLADYS:**
-Simply click **"Sign in with Google"** using your registered Gmail. The system will recognize you immediately and open your personalized **Command Center** with your specific greetings!
+1.  **📊 Attendance Analytics**: Build a visual dashboard to track growth trends across different service types.
+2.  **🔔 Real-Time Alerts**: Integrate Firebase Cloud Messaging (FCM) for "New Message" notifications on mobile.
+3.  **💳 Member Self-Service**: Allow members to view their own Digital ID and certification progress on their home profile.
+4.  **📁 Church Drive Expansion**: Finalize the document sharing system for ministry resources.
 
 ---
 
-**📋 INSTRUCTIONS FOR MINISTERS:**
-Please ask the ministers to login and do these 3 quick steps:
-
-1️⃣ **Google Login**: Use any personal Gmail to sign in.
-2️⃣ **Update Profile**: Click **"Edit Profile"** at the top to input their *Official Full Name* and *Family Name*. This builds our church directory! 📖
-3️⃣ **Save QR Code**: Tap **"Save as Image"** under their QR code. They should keep this image in their phone gallery to show the ushers this Sunday for check-in. ✅
-
----
-
-**✨ KEY FEATURES TO EXPLORE:**
-💬 **Discuss Module**: Private chat and video calling for church leadership (top right menu).
-📲 **Attendance Scanner**: Ushers can use the Admin Hub to scan QR images at the door instantly.
-📢 **Live Announcements**: Our church Facebook feed is now live on the website's front page! 
-
-To God be the glory! Please let me know if you need any adjustments as you explore the portal. 🙏
+## 🛠️ Technical Manifest
+- **Framework**: React (Vite) / Vanilla CSS
+- **Database**: Firebase Firestore (Real-time sync)
+- **Authentication**: Firebase Auth (Google & Email)
+- **Video Engine**: Jitsi External API (IFrame Implementation)
+- **Scanner**: Html5-Qrcode
