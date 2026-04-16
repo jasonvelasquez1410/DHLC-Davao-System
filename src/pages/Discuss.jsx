@@ -110,6 +110,16 @@ const Discuss = () => {
     }
   };
 
+  const handleStartVideo = () => {
+    // Generate a unique room name based on the chat ID for privacy
+    const roomId = activeTab.type === 'dm' 
+      ? `DHLC_DAVAO_DM_${[user.uid, activeTab.id].sort().join('_')}`
+      : `DHLC_DAVAO_CHANNEL_${activeTab.id}`;
+    
+    const jitsiUrl = `https://meet.jit.si/${roomId}#config.startWithAudioMuted=true&config.startWithVideoMuted=false`;
+    window.open(jitsiUrl, '_blank');
+  };
+
   const selectChat = (type, id, data) => {
     setActiveTab({ type, id });
     setActiveConversation(data);
@@ -156,7 +166,7 @@ const Discuss = () => {
                <h2 style={{ margin: 0, fontSize: '1.2rem' }}>{activeConversation?.name?.toUpperCase()}</h2>
             </div>
             <div style={{ display: 'flex', gap: '1rem' }}>
-               <button style={{ background: DHLC_GOLD, border: 'none', padding: '0.5rem 1rem', borderRadius: '20px', fontWeight: 'bold', cursor: 'pointer', fontSize: '0.75rem' }}>START VIDEO CALL</button>
+               <button onClick={handleStartVideo} style={{ background: DHLC_GOLD, border: 'none', padding: '0.5rem 1rem', borderRadius: '20px', fontWeight: 'bold', cursor: 'pointer', fontSize: '0.75rem' }}>START VIDEO CALL</button>
                <button onClick={() => setShowSettings(!showSettings)} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer' }}><Settings size={20} /></button>
             </div>
          </header>
