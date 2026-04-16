@@ -6,7 +6,7 @@ import { useAuth } from '../App';
 import { 
   Send, Hash, Users, MessageSquare, Video, 
   Phone, Paperclip, Smile, Plus, Info, Bell, BellOff,
-  UserCircle, Settings, Music, Wrench, File,
+  UserCircle, Settings, Music, Wrench, File, Star,
   Shield, Camera, Heart, Briefcase, Coffee, Baby, Download, X, Search
 } from 'lucide-react';
 
