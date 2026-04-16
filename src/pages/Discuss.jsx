@@ -110,22 +110,21 @@ const Discuss = () => {
   };
 
   return (
-    <div className="discuss-container" style={{ background: '#001226', height: '100vh', display: 'flex', overflow: 'hidden', paddingTop: '80px' }}>
+    <div style={{ background: '#001226', height: '100vh', display: 'flex', overflow: 'hidden', paddingTop: '80px', color: 'white', fontFamily: 'sans-serif' }}>
       
       {/* ODOO SIDEBAR */}
-      <aside className="odoo-sidebar" style={{ width: '300px', borderRight: '1px solid rgba(255,255,255,0.05)', background: '#000d1a', display: 'flex', flexDirection: 'column' }}>
+      <aside style={{ width: '300px', borderRight: '1px solid rgba(255,255,255,0.05)', background: '#000d1a', display: 'flex', flexDirection: 'column' }}>
         <div style={{ padding: '1.5rem', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-           <h2 className="font-serif" style={{ fontSize: '1.5rem' }}>Discuss</h2>
+           <h2 style={{ fontSize: '1.5rem', margin: 0 }}>Discuss</h2>
         </div>
         <div style={{ overflowY: 'auto', flex: 1, padding: '1rem' }}>
            <div style={{ marginBottom: '2rem' }}>
-              <button className="sidebar-link active"><Info size={18} /> Inbox</button>
-              <button className="sidebar-link"><Star fill="none" size={18} /> Starred</button>
+              <button style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '12px', padding: '0.8rem 1rem', border: 'none', background: 'rgba(242, 153, 0, 0.1)', color: '#F29900', cursor: 'pointer', borderRadius: '8px', fontWeight: 'bold' }}><Info size={18} /> Inbox</button>
            </div>
            <div style={{ marginBottom: '2rem' }}>
-              <p style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.4)', fontWeight: 'bold', textTransform: 'uppercase', padding: '0 0.5rem' }}>Departments</p>
+              <p style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.4)', fontWeight: 'bold', textTransform: 'uppercase', padding: '0 0.5rem', margin: '0 0 1rem 0' }}>Departments</p>
               {channels.map(c => (
-                <button key={c.id} onClick={() => selectChat('channel', c.id, c)} className={`sidebar-item ${activeTab.type === 'channel' && activeTab.id === c.id ? 'active' : ''}`}>
+                <button key={c.id} onClick={() => selectChat('channel', c.id, c)} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '12px', padding: '0.6rem 0.8rem', border: 'none', background: activeTab.id === c.id ? 'rgba(255,255,255,0.05)' : 'transparent', color: 'white', cursor: 'pointer', borderRadius: '8px', marginBottom: '4px' }}>
                    <Hash size={16} /> {c.name}
                 </button>
               ))}
@@ -133,10 +132,10 @@ const Discuss = () => {
            <div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 0.5rem', marginBottom: '0.8rem' }}>
                  <p style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.4)', fontWeight: 'bold', textTransform: 'uppercase' }}>Direct Messages</p>
-                 <Plus size={16} className="pointer" style={{ color: 'var(--primary)' }} onClick={() => setShowUserSearch(true)} />
+                 <Plus size={16} style={{ color: '#F29900', cursor: 'pointer' }} onClick={() => setShowUserSearch(true)} />
               </div>
               {recentDMs.map(u => (
-                <button key={u.uid} onClick={() => selectChat('dm', u.uid, u)} className={`sidebar-item ${activeTab.type === 'dm' && activeTab.id === u.uid ? 'active' : ''}`}>
+                <button key={u.uid} onClick={() => selectChat('dm', u.uid, u)} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '12px', padding: '0.6rem 0.8rem', border: 'none', background: activeTab.id === u.uid ? 'rgba(255,255,255,0.05)' : 'transparent', color: 'white', cursor: 'pointer', borderRadius: '8px', marginBottom: '4px' }}>
                    <img src={u.photoURL || `https://ui-avatars.com/api/?name=${u.name}`} style={{ width: '24px', borderRadius: '50%' }} alt="" />
                    {u.name}
                 </button>
@@ -147,15 +146,15 @@ const Discuss = () => {
 
       {/* SEARCH OVERLAY */}
       {showUserSearch && (
-        <div style={{ position: 'fixed', top: '120px', left: '320px', width: '400px', background: '#002244', zIndex: 6000, borderRadius: '15px', border: '1px solid var(--primary)', padding: '1.5rem', boxShadow: '0 20px 50px rgba(0,0,0,0.5)' }}>
+        <div style={{ position: 'fixed', top: '120px', left: '320px', width: '400px', background: '#002244', zIndex: 6000, borderRadius: '15px', border: '1px solid #F29900', padding: '1.5rem', boxShadow: '0 20px 50px rgba(0,0,0,0.5)' }}>
            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '1rem', marginBottom: '1rem' }}>
-             <Search size={20} color="var(--primary)" />
+             <Search size={20} color="#F29900" />
              <input autoFocus placeholder="Find member..." value={userSearchTerm} onChange={(e) => setUserSearchTerm(e.target.value)} style={{ background: 'none', border: 'none', color: 'white', fontSize: '1.1rem', outline: 'none', width: '100%' }} />
-             <X size={20} className="pointer" onClick={() => setShowUserSearch(false)} />
+             <X size={20} style={{ cursor: 'pointer' }} onClick={() => setShowUserSearch(false)} />
            </div>
            <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
               {allUsers.filter(u => u.name.toLowerCase().includes(userSearchTerm.toLowerCase())).map(u => (
-                <div key={u.uid} onClick={() => selectChat('dm', u.uid, u)} style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.8rem', borderRadius: '10px', cursor: 'pointer' }} className="search-result-item">
+                <div key={u.uid} onClick={() => selectChat('dm', u.uid, u)} style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.8rem', borderRadius: '10px', cursor: 'pointer' }}>
                    <img src={u.photoURL || `https://ui-avatars.com/api/?name=${u.name}`} style={{ width: '32px', borderRadius: '50%' }} alt="" />
                    <p style={{ margin:0 }}>{u.name}</p>
                 </div>
@@ -169,11 +168,11 @@ const Discuss = () => {
          <header style={{ padding: '1.2rem 2.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.05)', background: '#001226', minHeight: '80px' }}>
             <h2 style={{ margin: 0 }}>{activeConversation?.name}</h2>
             <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
-               <button onClick={startMeeting} className="btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '0.6rem 1.2rem', borderRadius: '30px' }}>
-                 <Video size={20} /> <b>START VIDEO CALL</b>
+               <button onClick={startMeeting} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '0.6rem 1.2rem', borderRadius: '30px', background: '#F29900', border: 'none', color: 'black', fontWeight: 'bold', cursor: 'pointer' }}>
+                 <Video size={20} /> START VIDEO CALL
                </button>
                <button onClick={() => setIsMuted(!isMuted)} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer' }}>
-                 {isMuted ? <BellOff size={22} color="var(--text-dim)" /> : <Bell size={22} color="var(--primary)" />}
+                 {isMuted ? <BellOff size={22} color="gray" /> : <Bell size={22} color="#F29900" />}
                </button>
                <button onClick={() => setShowSettings(!showSettings)} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer' }}><Settings size={22} /></button>
             </div>
@@ -192,24 +191,23 @@ const Discuss = () => {
             <div ref={scrollRef} />
          </div>
 
-         {/* SETTINGS MODAL (RESTORED) */}
+         {/* SETTINGS MODAL */}
          {showSettings && (
-           <div style={{ position: 'fixed', top: '120px', right: '30px', width: '320px', background: '#002d5a', borderRadius: '20px', border: '2px solid var(--primary)', padding: '2rem', boxShadow: '0 20px 60px rgba(0,0,0,0.8)', zIndex: 7000 }}>
+           <div style={{ position: 'fixed', top: '120px', right: '30px', width: '320px', background: '#002d5a', borderRadius: '20px', border: '2px solid #F29900', padding: '2rem', boxShadow: '0 20px 60px rgba(0,0,0,0.8)', zIndex: 7000 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
                 <h3 style={{ margin: 0 }}>Chat Settings</h3>
-                <X size={20} className="pointer" onClick={() => setShowSettings(false)} />
+                <X size={20} style={{ cursor: 'pointer' }} onClick={() => setShowSettings(false)} />
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
                  <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Desktop Notifications</span><input type="checkbox" checked={!isMuted} readOnly /></div>
-                 <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Show Online Status</span><input type="checkbox" checked readOnly /></div>
-                 <button className="btn-ghost" onClick={() => setShowSettings(false)} style={{ width: '100%', marginTop: '1rem' }}>Close</button>
+                 <button onClick={() => setShowSettings(false)} style={{ background: '#F29900', border: 'none', padding: '0.8rem', borderRadius: '10px', cursor: 'pointer', fontWeight: 'bold' }}>Close Settings</button>
               </div>
            </div>
          )}
 
          {/* EMOJI SELECTOR */}
          {showEmojis && (
-           <div style={{ position: 'absolute', bottom: '100px', left: '2rem', background: '#002244', border: '1px solid var(--primary)', borderRadius: '15px', padding: '1rem', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.5rem', zIndex: 6500, boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }}>
+           <div style={{ position: 'absolute', bottom: '100px', left: '2rem', background: '#002244', border: '1px solid #F29900', borderRadius: '15px', padding: '1rem', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.5rem', zIndex: 6500, boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }}>
               {emojis.map(e => (
                 <button key={e} onClick={() => addEmoji(e)} style={{ background: 'none', border: 'none', fontSize: '1.8rem', cursor: 'pointer', padding: '0.5rem' }}>{e}</button>
               ))}
@@ -217,27 +215,18 @@ const Discuss = () => {
          )}
 
          <form onSubmit={handleSendMessage} style={{ padding: '1.5rem 2.5rem', borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', gap: '1.2rem', alignItems: 'center' }}>
-            <button type="button" onClick={() => setShowEmojis(!showEmojis)} className="btn-ghost" style={{ padding: '0.8rem', borderRadius: '50%' }}><Smile size={24} /></button>
+            <button type="button" onClick={() => setShowEmojis(!showEmojis)} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer' }}><Smile size={24} /></button>
             <input 
               placeholder="Type your message..." 
               value={newMessage} 
               onChange={(e) => setNewMessage(e.target.value)} 
-              style={{ flex: 1, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', padding: '1.2rem', borderRadius: '15px', color: 'white' }}
+              style={{ flex: 1, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', padding: '1.2rem', borderRadius: '15px', color: 'white', outline: 'none' }}
             />
-            <button type="submit" className="btn-primary" style={{ width: '55px', height: '55px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#F29900', border: 'none', cursor: 'pointer' }}>
-               <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginLeft: '4px' }}><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+            <button type="submit" style={{ width: '55px', height: '55px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#F29900', border: 'none', cursor: 'pointer' }}>
+               <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginLeft: '4px' }}><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
             </button>
          </form>
       </main>
-
-      <style jsx>{`
-        .sidebar-link { width: 100%; display: flex; align-items: center; gap: 12px; padding: 0.8rem 1rem; border: none; background: transparent; color: rgba(255,255,255,0.6); cursor: pointer; border-radius: 8px; font-weight: 500; }
-        .sidebar-link.active { background: rgba(242, 153, 0, 0.1); color: var(--primary); }
-        .sidebar-item { width: 100%; display: flex; align-items: center; gap: 12px; padding: 0.6rem 0.8rem; border: none; background: transparent; color: rgba(255,255,255,0.5); cursor: pointer; border-radius: 8px; font-size: 0.85rem; }
-        .sidebar-item.active { background: rgba(242, 153, 0, 0.15); color: white; font-weight: bold; }
-        .search-result-item:hover { background: rgba(242, 153, 0, 0.2); }
-        .pointer { cursor: pointer; }
-      `}</style>
     </div>
   );
 };
