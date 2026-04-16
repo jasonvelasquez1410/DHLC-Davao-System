@@ -35,6 +35,9 @@ const Discuss = () => {
   
   const [channels, setChannels] = useState(baseChannels);
   const [activeChannel, setActiveChannel] = useState(allowedBaseChannels[0] || baseChannels[0]);
+  const [isDM, setIsDM] = useState(false);
+  const [activeDMUser, setActiveDMUser] = useState(null);
+  
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
   const [activeUsers, setActiveUsers] = useState([]);
@@ -60,49 +63,75 @@ const Discuss = () => {
     return () => unsubscribe();
   }, []);
 
+  // Fetch Roster
   useEffect(() => {
     const fetchUsers = async () => {
-      const q = query(collection(db, 'users'), where('role', 'in', ['admin', 'leader']));
+      const q = query(collection(db, 'users'));
       const snap = await getDocs(q);
-      setActiveUsers(snap.docs.map(doc => doc.data()));
+      setActiveUsers(snap.docs.map(doc => ({ uid: doc.id, ...doc.data() })).filter(u => u.uid !== user.uid));
     };
     fetchUsers();
-  }, []);
+  }, [user.uid]);
 
+  // Unified Message Fetching (Channel OR DM)
   useEffect(() => {
-    if (!activeChannel) return;
-    // Query without 'where' first if index might be missing, 
-    // but in production 'where-orderBy' is best.
-    // Adding try-catch or simplified query for robustness
-    const q = query(
-      collection(db, 'messages'),
-      orderBy('createdAt', 'asc')
-    );
-    
+    let q;
+    if (isDM && activeDMUser) {
+      const dmId = [user.uid, activeDMUser.uid].sort().join('_');
+      q = query(
+        collection(db, 'messages'),
+        where('dmId', '==', dmId),
+        orderBy('createdAt', 'asc')
+      );
+    } else if (activeChannel) {
+      q = query(
+        collection(db, 'messages'),
+        where('channelId', '==', activeChannel.id),
+        orderBy('createdAt', 'asc')
+      );
+    }
+
+    if (!q) return;
+
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const msgs = snapshot.docs
-        .map(doc => ({ id: doc.id, ...doc.data() }))
-        .filter(m => m.channelId === activeChannel.id); // Client-side filter as fallback for missing index
-      
-      setMessages(msgs);
+      setMessages(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
       setTimeout(() => scrollRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
     }, (error) => {
-      console.error("Firestore Error in Discuss:", error);
+      console.error("Firestore Error:", error);
+      const fallbackQ = query(collection(db, 'messages'), orderBy('createdAt', 'asc'), limit(50));
+      getDocs(fallbackQ).then(snap => {
+         const msgs = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+         if (isDM) {
+           const dmId = [user.uid, activeDMUser.uid].sort().join('_');
+           setMessages(msgs.filter(m => m.dmId === dmId));
+         } else {
+           setMessages(msgs.filter(m => m.channelId === activeChannel.id));
+         }
+      });
     });
     return () => unsubscribe();
-  }, [activeChannel.id]);
+  }, [activeChannel?.id, isDM, activeDMUser?.uid]);
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
     if (!newMessage.trim()) return;
-    await addDoc(collection(db, 'messages'), {
+    
+    const messageData = {
       text: newMessage,
-      channelId: activeChannel.id,
       senderId: user.uid,
       senderName: user.name,
       senderPhoto: user.photoURL || null,
       createdAt: serverTimestamp()
-    });
+    };
+
+    if (isDM) {
+      messageData.dmId = [user.uid, activeDMUser.uid].sort().join('_');
+      messageData.recipientId = activeDMUser.uid;
+    } else {
+      messageData.channelId = activeChannel.id;
+    }
+
+    await addDoc(collection(db, 'messages'), messageData);
     setNewMessage('');
   };
 
@@ -112,53 +141,68 @@ const Discuss = () => {
 
     setUploading(true);
     try {
-      const storageRef = ref(storage, `chat/${activeChannel.id}/${Date.now()}_${file.name}`);
+      const storageRef = ref(storage, `chat/${isDM ? 'dm' : activeChannel.id}/${Date.now()}_${file.name}`);
       await uploadBytes(storageRef, file);
       const url = await getDownloadURL(storageRef);
 
-      await addDoc(collection(db, 'messages'), {
+      const messageData = {
         text: `Shared a file: ${file.name}`,
         fileUrl: url,
         fileName: file.name,
         fileType: file.type,
-        channelId: activeChannel.id,
         senderId: user.uid,
         senderName: user.name,
         senderPhoto: user.photoURL || null,
         createdAt: serverTimestamp(),
         isFile: true
-      });
+      };
+
+      if (isDM) {
+        messageData.dmId = [user.uid, activeDMUser.uid].sort().join('_');
+      } else {
+        messageData.channelId = activeChannel.id;
+      }
+
+      await addDoc(collection(db, 'messages'), messageData);
     } catch (err) {
       console.error(err);
-      alert("Attachment failed. Try a smaller file.");
     } finally {
       setUploading(false);
     }
   };
 
-  const createChannel = async () => {
-    const name = prompt("Enter Custom Group Name:");
-    if (!name) return;
-    await addDoc(collection(db, 'channels'), {
-      name: name,
-      createdBy: user.uid,
-      roles: ['admin', 'leader', 'member'],
-      createdAt: serverTimestamp()
-    });
-  };
-
   const startCall = () => {
-    const jitsiUrl = `https://meet.jit.si/DHLC-Davao-${activeChannel.id}-${Math.floor(Math.random() * 1000)}`;
-    addDoc(collection(db, 'messages'), {
+    const roomId = isDM 
+      ? `DHLC-Private-${[user.uid, activeDMUser.uid].sort().join('-')}`
+      : `DHLC-Davao-${activeChannel.id}`;
+      
+    const jitsiUrl = `https://meet.jit.si/${roomId}`;
+    
+    const callMsg = {
       text: `🚀 STARTED VIDEO CALL: ${jitsiUrl}`,
-      channelId: activeChannel.id,
       senderId: user.uid,
       senderName: user.name,
       senderPhoto: user.photoURL || null,
       createdAt: serverTimestamp(),
       isCall: true
-    });
+    };
+    
+    if (isDM) callMsg.dmId = [user.uid, activeDMUser.uid].sort().join('_');
+    else callMsg.channelId = activeChannel.id;
+
+    addDoc(collection(db, 'messages'), callMsg);
     window.open(jitsiUrl, '_blank');
+  };
+
+  const selectDM = (u) => {
+    setIsDM(true);
+    setActiveDMUser(u);
+  };
+
+  const selectChannel = (c) => {
+    setIsDM(false);
+    setActiveDMUser(null);
+    setActiveChannel(c);
   };
 
   return (
@@ -169,14 +213,9 @@ const Discuss = () => {
           <h2 className="font-serif" style={{ marginBottom: '1.5rem' }}>Discuss</h2>
           
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-               <p style={{ fontSize: '0.7rem', color: 'var(--text-dim)', textTransform: 'uppercase' }}>Departments</p>
-               {(user.role === 'admin' || user.role === 'leader') && (
-                 <button onClick={createChannel} style={{ background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer' }}><Plus size={16}/></button>
-               )}
-            </div>
+            <p style={{ fontSize: '0.7rem', color: 'var(--text-dim)', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Departments</p>
             {channels.filter(c => c.roles.includes(user.role)).map(channel => (
-              <button key={channel.id} onClick={() => setActiveChannel(channel)} className={`channel-btn ${activeChannel.id === channel.id ? 'active' : ''}`}>
+              <button key={channel.id} onClick={() => selectChannel(channel)} className={`channel-btn ${!isDM && activeChannel.id === channel.id ? 'active' : ''}`}>
                 <channel.icon size={16} /> {channel.name}
               </button>
             ))}
@@ -189,22 +228,27 @@ const Discuss = () => {
         <header className="chat-header">
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
             <div style={{ padding: '0.5rem', background: 'var(--glass)', borderRadius: '10px', color: 'var(--primary)' }}>
-              <activeChannel.icon size={20} />
+              {isDM ? <UserCircle size={20} /> : (activeChannel ? <activeChannel.icon size={20} /> : <Hash size={20}/>)}
             </div>
             <div>
-              <h3 style={{ margin: 0 }}>{activeChannel.name}</h3>
-              <p style={{ fontSize: '0.75rem', color: 'var(--text-dim)', margin: 0 }}>Official Department Thread</p>
+              <h3 style={{ margin: 0 }}>{isDM ? activeDMUser.name : (activeChannel ? activeChannel.name : 'Select Channel')}</h3>
+              <p style={{ fontSize: '0.75rem', color: 'var(--text-dim)', margin: 0 }}>{isDM ? 'Private Conversation' : 'Department Thread'}</p>
             </div>
           </div>
           <div style={{ display: 'flex', gap: '1rem' }}>
-            <button className="btn-ghost" style={{ padding: '0.5rem' }} onClick={startCall} title="Start Group Call"><Video size={18} /></button>
-            <button className="btn-ghost" style={{ padding: '0.5rem' }}><Settings size={18} /></button>
+            <button className="btn-ghost" style={{ padding: '0.5rem' }} onClick={startCall} title="Video Call"><Video size={18} /></button>
           </div>
         </header>
 
         <div className="messages-area">
+          {messages.length === 0 && (
+            <div style={{ textAlign: 'center', padding: '4rem 2rem', opacity: 0.5 }}>
+              <MessageSquare size={48} style={{ marginBottom: '1rem' }} />
+              <p>No messages here yet. Start the conversation!</p>
+            </div>
+          )}
           {messages.map((msg) => (
-            <div key={msg.id} style={{ display: 'flex', gap: '1rem', alignSelf: msg.senderId === user.uid ? 'flex-end' : 'flex-start', maxWidth: '80%' }}>
+            <div key={msg.id} style={{ display: 'flex', gap: '1rem', alignSelf: msg.senderId === user.uid ? 'flex-end' : 'flex-start', maxWidth: '80%', marginBottom: '1rem' }}>
               {msg.senderId !== user.uid && (
                 <img src={msg.senderPhoto || `https://ui-avatars.com/api/?name=${msg.senderName}`} className="user-avatar" style={{ width: '32px', height: '32px' }} alt="" />
               )}
@@ -214,21 +258,14 @@ const Discuss = () => {
                   <span style={{ fontSize: '0.7rem', opacity: 0.6 }}>{msg.createdAt?.toDate ? msg.createdAt.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '...'}</span>
                 </div>
                 {msg.isFile ? (
-                  <div style={{ padding: '10px', background: 'rgba(255,255,255,0.05)', borderRadius: '10px', border: '1px solid var(--glass-border)', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <div style={{ background: 'var(--primary-glow)', padding: '8px', borderRadius: '8px' }}>
-                       {msg.fileType?.includes('image') ? <Camera size={20} /> : <File size={20} />}
-                    </div>
-                    <div style={{ flex: 1 }}>
-                      <p style={{ fontSize: '0.85rem', fontWeight: 'bold', marginBottom: '4px', wordBreak: 'break-all' }}>{msg.fileName}</p>
-                      <a href={msg.fileUrl} target="_blank" rel="noreferrer" style={{ fontSize: '0.75rem', color: 'var(--primary)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <Download size={14} /> Download File
-                      </a>
-                    </div>
+                  <div style={{ padding: '10px', background: 'rgba(255,255,255,0.05)', borderRadius: '10px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <Download size={20} />
+                    <a href={msg.fileUrl} target="_blank" rel="noreferrer" style={{ color: 'var(--primary)' }}>{msg.fileName}</a>
                   </div>
                 ) : msg.isCall ? (
                   <div style={{ padding: '10px', background: 'rgba(255,255,255,0.05)', borderRadius: '10px', border: '1px solid var(--primary)' }}>
-                    <p style={{ marginBottom: '8px', fontSize: '0.85rem' }}>🎥 {msg.senderName} started a Video Call</p>
-                    <a href={msg.text.split(': ')[1]} target="_blank" rel="noreferrer" className="btn-primary" style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem', display: 'inline-block' }}>JOIN CALL</a>
+                    <p style={{ marginBottom: '8px' }}>🚀 Video Call Link Provided</p>
+                    <a href={msg.text.split(': ')[1]} target="_blank" rel="noreferrer" className="btn-primary" style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }}>JOIN NOW</a>
                   </div>
                 ) : <p style={{ fontSize: '0.9rem' }}>{msg.text}</p>}
               </div>
@@ -238,53 +275,44 @@ const Discuss = () => {
         </div>
 
         <form className="chat-input-area" onSubmit={handleSendMessage}>
-          <label style={{ cursor: 'pointer' }} className="btn-ghost" title="Attach Media">
+          <label className="btn-ghost">
             <Paperclip size={18} />
             <input type="file" onChange={handleFileUpload} style={{ display: 'none' }} disabled={uploading} />
           </label>
-          <input type="text" className="chat-input" placeholder={uploading ? "Uploading media..." : `Message #${activeChannel.name}`} value={newMessage} onChange={(e) => setNewMessage(e.target.value)} disabled={uploading} />
+          <input type="text" className="chat-input" placeholder={`Message ${isDM ? activeDMUser.name : '#' + (activeChannel?.name || '...')}`} value={newMessage} onChange={(e) => setNewMessage(e.target.value)} disabled={uploading} />
           <button type="submit" className="btn-primary" style={{ padding: '0.8rem' }} disabled={uploading}><Send size={18} /></button>
         </form>
       </main>
 
       {/* Roster & Info Side (Right) */}
       <aside className="chat-notification-sidebar">
-        <div className="guide-card" style={{ marginBottom: '1.5rem', background: 'rgba(242, 153, 0, 0.05)', border: '1px solid var(--glass-border)' }}>
-          <h4 style={{ display: 'flex', alignItems: 'center', gap: '5px', marginBottom: '8px', fontSize: '0.9rem' }}>
-            <Info size={16} color="var(--primary)" /> Minister Guide
-          </h4>
-          <p style={{ fontSize: '0.75rem' }}>• Use the **Paperclip** to share files/media.</p>
-          <p style={{ fontSize: '0.75rem' }}>• Files are auto-stored in the church library.</p>
-          <p style={{ fontSize: '0.75rem' }}>• Click Video icon for instant group meetings.</p>
-        </div>
-
-        <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1rem', color: 'var(--text-dim)' }}>
+        <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1rem', color: 'var(--text-dim)', marginBottom: '1.5rem' }}>
           <Users size={18} /> Active Roster
         </h3>
         
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem', marginTop: '1rem' }}>
-          {activeUsers.map((u, i) => (
-            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-               <div style={{ position: 'relative' }}>
-                 <img src={u.photoURL || `https://ui-avatars.com/api/?name=${u.name}`} className="user-avatar" style={{ width: '28px', height: '28px' }} alt="" />
-                 <div style={{ position: 'absolute', bottom: 0, right: 0, width: '6px', height: '6px', background: '#4caf50', borderRadius: '50%', border: '2px solid var(--bg-dark)' }}></div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+          {activeUsers.map((u) => (
+            <button key={u.uid} onClick={() => selectDM(u)} style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '12px', 
+              background: activeDMUser?.uid === u.uid ? 'rgba(242, 153, 0, 0.1)' : 'transparent',
+              border: 'none',
+              padding: '8px',
+              borderRadius: '10px',
+              width: '100%',
+              cursor: 'pointer',
+              textAlign: 'left',
+              color: 'white',
+              transition: '0.2s'
+            }}>
+               <img src={u.photoURL || `https://ui-avatars.com/api/?name=${u.name}`} className="user-avatar" style={{ width: '28px', height: '28px', border: activeDMUser?.uid === u.uid ? '2px solid var(--primary)' : 'none' }} alt="" />
+               <div style={{ flex: 1 }}>
+                 <p style={{ fontWeight: '500', fontSize: '0.8rem', margin: 0 }}>{u.name}</p>
+                 <p style={{ fontSize: '0.65rem', color: 'var(--text-dim)', margin: 0 }}>{u.role}</p>
                </div>
-               <div>
-                 <p style={{ fontWeight: '500', fontSize: '0.8rem', marginBottom: '0' }}>{u.name}</p>
-                 <p style={{ fontSize: '0.65rem', color: 'var(--text-dim)' }}>{u.role}</p>
-               </div>
-            </div>
+            </button>
           ))}
-        </div>
-
-        <div style={{ marginTop: 'auto' }}>
-           <div className="premium-card" style={{ padding: '1rem', background: 'rgba(0, 45, 98, 0.4)' }}>
-              <p style={{ fontSize: '0.75rem', color: 'var(--text-dim)', marginBottom: '4px' }}>Logged in as:</p>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <img src={user.photoURL || `https://ui-avatars.com/api/?name=${user.name}`} className="user-avatar" style={{ width: '24px', height: '24px' }} alt="" />
-                <span style={{ fontWeight: 'bold', fontSize: '0.85rem' }}>{user.name}</span>
-              </div>
-           </div>
         </div>
       </aside>
     </div>
