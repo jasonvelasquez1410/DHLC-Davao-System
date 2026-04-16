@@ -91,6 +91,9 @@ const AdminDashboard = () => {
     }
   };
 
+  const [currentEvent, setCurrentEvent] = useState({ name: 'Sunday Main Service', location: 'Davao Sanctuary' });
+  const [editingEvent, setEditingEvent] = useState(false);
+
   const handleScanSuccess = async (qrData) => {
     if (scanning === false) return; 
     setScanning(false);
@@ -106,8 +109,8 @@ const AdminDashboard = () => {
         userId: scannedUser.id,
         userName: scannedUser.name,
         timestamp: serverTimestamp(),
-        service: 'Sunday Main Service',
-        location: 'Davao City Sanctuary'
+        service: currentEvent.name,
+        location: currentEvent.location
       });
       setScanResult({ success: true, user: scannedUser });
       setTimeout(() => setScanResult(null), 5000);
@@ -217,9 +220,61 @@ const AdminDashboard = () => {
         </div>
 
         {activeTab === 'scanner' && (
-           <div style={{ textAlign: 'center', padding: '4rem 0' }}>
-              {!scanning && <button onClick={startScanner} className="btn-primary" style={{ padding: '2rem 4rem', fontSize: '1.5rem', borderRadius: '20px' }}><Scan size={30} /> START ATTENDANCE SCANNER</button>}
-              {scanning && <div id="reader" style={{ maxWidth: '500px', margin: '0 auto', border: '2px solid var(--primary)', borderRadius: '20px', overflow: 'hidden' }}></div>}
+           <div>
+              <div className="premium-card" style={{ marginBottom: '2rem', padding: '1.5rem', background: 'rgba(242, 153, 0, 0.05)', border: '1px dashed var(--primary)' }}>
+                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                       <p style={{ fontSize: '0.7rem', color: 'var(--primary)', fontWeight: 'bold', margin: '0 0 0.2rem 0' }}>CURRENT CHECK-IN EVENT</p>
+                       <h3 style={{ margin: 0 }}>{currentEvent.name} <span style={{ opacity: 0.5, fontSize: '0.8rem', fontWeight: 'normal' }}>@ {currentEvent.location}</span></h3>
+                    </div>
+                    <button onClick={() => setEditingEvent(!editingEvent)} className="btn-ghost" style={{ padding: '0.4rem 1rem', fontSize: '0.8rem' }}>{editingEvent ? 'Close' : 'Change Event'}</button>
+                 </div>
+                 
+                 {editingEvent && (
+                    <div style={{ marginTop: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '1.5rem' }}>
+                       <div style={{ display: 'flex', gap: '1rem' }}>
+                          <input type="text" value={currentEvent.name} onChange={(e) => setCurrentEvent({...currentEvent, name: e.target.value})} placeholder="Event Name (e.g. Divinity Night)" style={{ flex: 2, padding: '0.8rem', background: 'var(--glass)', border: '1px solid var(--glass-border)', color: 'white', borderRadius: '10px' }} />
+                          <input type="text" value={currentEvent.location} onChange={(e) => setCurrentEvent({...currentEvent, location: e.target.value})} placeholder="Location" style={{ flex: 1, padding: '0.8rem', background: 'var(--glass)', border: '1px solid var(--glass-border)', color: 'white', borderRadius: '10px' }} />
+                       </div>
+                       <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                          <p style={{ fontSize: '0.8rem', width: '100%', marginBottom: '0.2rem', opacity: 0.5 }}>Quick Presets:</p>
+                          <button onClick={() => setCurrentEvent({name: 'Sunday Main Service', location: 'Davao Sanctuary'})} className="btn-ghost" style={{ fontSize: '0.75rem', padding: '0.4rem 0.8rem' }}>Sunday Service</button>
+                          <button onClick={() => setCurrentEvent({name: 'Midweek Prayer', location: 'Davao Sanctuary'})} className="btn-ghost" style={{ fontSize: '0.75rem', padding: '0.4rem 0.8rem' }}>Midweek Prayer</button>
+                          <button onClick={() => setCurrentEvent({name: 'Divinity Night', location: 'Training Hall'})} className="btn-ghost" style={{ fontSize: '0.75rem', padding: '0.4rem 0.8rem' }}>Divinity Night</button>
+                          <button onClick={() => setCurrentEvent({name: 'Special Event', location: 'Davao Sanctuary'})} className="btn-ghost" style={{ fontSize: '0.75rem', padding: '0.4rem 0.8rem' }}>Special Event</button>
+                       </div>
+                    </div>
+                 )}
+              </div>
+
+              <div style={{ textAlign: 'center', padding: '2rem 0' }}>
+                 {!scanning && (
+                    <div style={{ opacity: scanResult ? 1 : 0.8, transition: '0.5s' }}>
+                       {scanResult && (
+                          <div style={{ marginBottom: '2rem', padding: '2rem', background: scanResult.success ? 'rgba(46, 204, 113, 0.1)' : 'rgba(231, 76, 60, 0.1)', border: '1px solid ' + (scanResult.success ? '#2ecc71' : '#e74c3c'), borderRadius: '20px' }}>
+                             {scanResult.success ? (
+                                <div>
+                                   <Check size={40} color="#2ecc71" style={{ marginBottom: '1rem' }} />
+                                   <h2 style={{ margin: 0 }}>Confirmed Check-in</h2>
+                                   <p style={{ fontSize: '1.2rem', margin: '0.5rem 0' }}><b>{scanResult.user.name}</b></p>
+                                   <p style={{ opacity: 0.6 }}>Recorded for {currentEvent.name}</p>
+                                </div>
+                             ) : (
+                                <div><X size={40} color="#e74c3c" /><p>{scanResult.message}</p></div>
+                             )}
+                          </div>
+                       )}
+                       <button onClick={startScanner} className="btn-primary" style={{ padding: '2rem 4rem', fontSize: '1.5rem', borderRadius: '20px', boxShadow: '0 20px 50px rgba(242, 153, 0, 0.3)' }}><Scan size={30} /> START SCANNER</button>
+                       <p style={{ marginTop: '1.5rem', color: 'var(--text-dim)' }}>Ready to record attendance for: <b>{currentEvent.name}</b></p>
+                    </div>
+                 )}
+                 {scanning && (
+                    <div style={{ maxWidth: '500px', margin: '0 auto' }}>
+                       <div id="reader" style={{ border: '2px solid var(--primary)', borderRadius: '20px', overflow: 'hidden' }}></div>
+                       <button onClick={() => setScanning(false)} className="btn-ghost" style={{ marginTop: '2rem' }}>Cancel Scanning</button>
+                    </div>
+                 )}
+              </div>
            </div>
         )}
 
