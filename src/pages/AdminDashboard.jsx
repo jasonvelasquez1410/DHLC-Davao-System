@@ -4,9 +4,10 @@ import { collection, query, where, getDocs, addDoc, serverTimestamp, doc, getDoc
 import { useAuth } from '../App';
 import { 
   Users, Scan, BarChart3, Search, PlusCircle, Check, X, 
-  UserCheck, Shield, ChevronRight, Filter, Download 
+  UserCheck, Shield, ChevronRight, Filter, Download, Printer, UserCircle
 } from 'lucide-react';
 import { Html5QrcodeScanner } from 'html5-qrcode';
+import { QRCodeCanvas } from 'qrcode.react';
 
 const AdminDashboard = () => {
   const { user } = useAuth();
@@ -17,24 +18,21 @@ const AdminDashboard = () => {
   const [scanning, setScanning] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   
-  // New Member Modal State
+  // Member ID Modal State
   const [showAddMember, setShowAddMember] = useState(false);
+  const [showMemberID, setShowMemberID] = useState(false);
+  const [selectedMember, setSelectedMember] = useState(null);
+  
   const [newMemberData, setNewMemberData] = useState({ name: '', email: '', role: 'member', family: '' });
   const [addingMember, setAddingMember] = useState(false);
 
-  // Personalized Greeting Logic
+  // Dash Labels
   let dashboardTitle = "Admin Hub";
   let dashboardSubtitle = "Manage members, track growth, and oversee church operations.";
-  let displayName = user?.name?.split(' ')[0] || "Admin";
-
+  
   if (user?.email === 'dhlc.minister@gmail.com') {
     dashboardTitle = "Head Pastor Command Center";
     dashboardSubtitle = "Welcome back, Pastor Glenn. Oversee your flock and ministry health.";
-    displayName = "Pastor Glenn";
-  } else if (user?.email === 'gmcebana.auditor@gmail.com') {
-    dashboardTitle = "Executive Pastor Dashboard";
-    dashboardSubtitle = "Welcome back, Pastor Gladys. Oversee church operations and audits.";
-    displayName = "Pastor Gladys";
   }
 
   useEffect(() => {
@@ -71,17 +69,20 @@ const AdminDashboard = () => {
     e.preventDefault();
     setAddingMember(true);
     try {
-      await addDoc(collection(db, 'users'), {
+      const docRef = await addDoc(collection(db, 'users'), {
         ...newMemberData,
         createdAt: serverTimestamp(),
         status: 'active'
       });
+      // Show ID immediately after add
+      const newlyAdded = { id: docRef.id, ...newMemberData };
+      setSelectedMember(newlyAdded);
       setShowAddMember(false);
+      setShowMemberID(true);
       setNewMemberData({ name: '', email: '', role: 'member', family: '' });
       // Refresh list
       const usersSnap = await getDocs(collection(db, 'users'));
       setMembers(usersSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-      alert("New member successfully enrolled!");
     } catch (err) {
       console.error(err);
       alert("Error adding member.");
@@ -127,6 +128,11 @@ const AdminDashboard = () => {
     }, 200);
   };
 
+  const openID = (m) => {
+    setSelectedMember(m);
+    setShowMemberID(true);
+  };
+
   const filteredMembers = members.filter(m => 
     m.name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
     m.email?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -136,115 +142,110 @@ const AdminDashboard = () => {
     <div className="container" style={{ paddingTop: '120px', paddingBottom: '60px' }}>
       <div className="animate-fade-in">
         
-        {/* New Member Enrollment Modal */}
+        {/* NEW MEMBER MODAL */}
         {showAddMember && (
           <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(10px)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem' }}>
             <div className="premium-card animate-scale-in" style={{ maxWidth: '500px', width: '100%', border: '1px solid var(--primary)', position: 'relative' }}>
                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
                   <h2 className="font-serif">Enroll <span className="text-gradient">Member</span></h2>
-                  <button onClick={() => setShowAddMember(false)} className="btn-ghost" style={{ padding: '0.4rem' }}><X size={20} /></button>
+                  <button onClick={() => setShowAddMember(false)} className="btn-ghost"><X size={20} /></button>
                </div>
-               
                <form onSubmit={handleAddMember} style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
-                  <div>
-                    <label style={{ fontSize: '0.8rem', color: 'var(--text-dim)', marginBottom: '0.4rem', display: 'block' }}>Full Name</label>
-                    <input type="text" value={newMemberData.name} onChange={(e) => setNewMemberData({...newMemberData, name: e.target.value})} style={{ width: '100%', padding: '0.8rem', background: 'var(--glass)', border: '1px solid var(--glass-border)', color: 'white', borderRadius: '10px' }} required placeholder="John Doe" />
-                  </div>
-                  <div>
-                    <label style={{ fontSize: '0.8rem', color: 'var(--text-dim)', marginBottom: '0.4rem', display: 'block' }}>Email Address</label>
-                    <input type="email" value={newMemberData.email} onChange={(e) => setNewMemberData({...newMemberData, email: e.target.value})} style={{ width: '100%', padding: '0.8rem', background: 'var(--glass)', border: '1px solid var(--glass-border)', color: 'white', borderRadius: '10px' }} required placeholder="john@example.com" />
-                  </div>
-                  <div>
-                    <label style={{ fontSize: '0.8rem', color: 'var(--text-dim)', marginBottom: '0.4rem', display: 'block' }}>Role</label>
-                    <select value={newMemberData.role} onChange={(e) => setNewMemberData({...newMemberData, role: e.target.value})} style={{ width: '100%', padding: '0.8rem', background: 'var(--glass)', border: '1px solid var(--glass-border)', color: 'white', borderRadius: '10px' }}>
-                      <option value="member">Member</option>
-                      <option value="leader">Leader</option>
-                      <option value="minister">Minister</option>
-                      <option value="admin">Admin</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label style={{ fontSize: '0.8rem', color: 'var(--text-dim)', marginBottom: '0.4rem', display: 'block' }}>Family Household</label>
-                    <input type="text" value={newMemberData.family} onChange={(e) => setNewMemberData({...newMemberData, family: e.target.value})} style={{ width: '100%', padding: '0.8rem', background: 'var(--glass)', border: '1px solid var(--glass-border)', color: 'white', borderRadius: '10px' }} placeholder="e.g. Ebana Family" />
-                  </div>
-                  <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem' }}>
-                    <button type="submit" className="btn-primary" style={{ flex: 1 }} disabled={addingMember}>
-                      {addingMember ? 'Saving...' : 'Register Member'}
-                    </button>
-                    <button type="button" onClick={() => setShowAddMember(false)} className="btn-ghost" style={{ flex: 1 }}>Cancel</button>
-                  </div>
+                  <input type="text" value={newMemberData.name} onChange={(e) => setNewMemberData({...newMemberData, name: e.target.value})} placeholder="Full Name" style={{ width: '100%', padding: '0.8rem', background: 'var(--glass)', border: '1px solid var(--glass-border)', color: 'white', borderRadius: '10px' }} required />
+                  <input type="email" value={newMemberData.email} onChange={(e) => setNewMemberData({...newMemberData, email: e.target.value})} placeholder="Email Address" style={{ width: '100%', padding: '0.8rem', background: 'var(--glass)', border: '1px solid var(--glass-border)', color: 'white', borderRadius: '10px' }} required />
+                  <select value={newMemberData.role} onChange={(e) => setNewMemberData({...newMemberData, role: e.target.value})} style={{ width: '100%', padding: '0.8rem', background: 'var(--glass)', border: '1px solid var(--glass-border)', color: 'white', borderRadius: '10px' }}>
+                    <option value="member">Member</option>
+                    <option value="leader">Leader</option>
+                    <option value="minister">Minister</option>
+                    <option value="admin">Admin</option>
+                  </select>
+                  <input type="text" value={newMemberData.family} onChange={(e) => setNewMemberData({...newMemberData, family: e.target.value})} placeholder="Family/Household" style={{ width: '100%', padding: '0.8rem', background: 'var(--glass)', border: '1px solid var(--glass-border)', color: 'white', borderRadius: '10px' }} />
+                  <button type="submit" className="btn-primary" style={{ marginTop: '1rem' }} disabled={addingMember}>
+                    {addingMember ? 'Saving...' : 'Register & Generate ID'}
+                  </button>
                </form>
             </div>
           </div>
         )}
 
-        {/* Header Section */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3rem', flexWrap: 'wrap', gap: '1rem' }}>
-          <div>
-            <h1 className="font-serif" style={{ fontSize: '3rem' }}>
-              {dashboardTitle.split(' ').map((word, i, arr) => 
-                i === arr.length - 1 ? <span key={i} className="text-gradient">{word}</span> : `${word} `
-              )}
-            </h1>
-            <p style={{ color: 'var(--text-dim)', fontSize: '1.1rem' }}>{dashboardSubtitle}</p>
-          </div>
-          <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-             <button className="btn-ghost" style={{ padding: '0.6rem 1.2rem' }}><Download size={18} /> Export Data</button>
-             <button onClick={() => setShowAddMember(true)} className="btn-primary" style={{ padding: '0.6rem 1.2rem' }} id="new-member-btn">
-               <PlusCircle size={18} /> New Member
-             </button>
-          </div>
-        </div>
-
-        {/* Tab Navigation */}
-        <div style={{ display: 'flex', gap: '1.5rem', marginBottom: '2.5rem', borderBottom: '1px solid var(--glass-border)', paddingBottom: '1rem' }}>
-          <button onClick={() => setActiveTab('scanner')} className={`nav-link ${activeTab === 'scanner' ? 'active' : ''}`} style={{ border: 'none', background: 'none', cursor: 'pointer', color: activeTab === 'scanner' ? 'var(--primary)' : 'var(--text-dim)', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1.1rem', fontWeight: 'bold' }}>
-            <Scan size={20} /> Attendance Scanner
-          </button>
-          <button onClick={() => setActiveTab('members')} className={`nav-link ${activeTab === 'members' ? 'active' : ''}`} style={{ border: 'none', background: 'none', cursor: 'pointer', color: activeTab === 'members' ? 'var(--primary)' : 'var(--text-dim)', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1.1rem', fontWeight: 'bold' }}>
-            <Users size={20} /> Directory
-          </button>
-          <button onClick={() => setActiveTab('reports')} className={`nav-link ${activeTab === 'reports' ? 'active' : ''}`} style={{ border: 'none', background: 'none', cursor: 'pointer', color: activeTab === 'reports' ? 'var(--primary)' : 'var(--text-dim)', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1.1rem', fontWeight: 'bold' }}>
-            <BarChart3 size={20} /> Analytics
-          </button>
-        </div>
-
-        {/* Content Area */}
-        <div style={{ minHeight: '500px' }}>
-          {activeTab === 'scanner' && (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
-               <div className="premium-card" style={{ textAlign: 'center' }}>
-                  <div style={{ marginBottom: '2rem' }}>
-                    <Scan size={40} color="var(--primary)" style={{ marginBottom: '1rem' }} />
-                    <h2>Attendance Check-in</h2>
-                    <p style={{ color: 'var(--text-dim)' }}>Scan member QR codes to record attendance.</p>
+        {/* DIGITAL ID MODAL / QR CODE GENERATOR */}
+        {showMemberID && selectedMember && (
+          <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.9)', backdropFilter: 'blur(15px)', zIndex: 3000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem' }}>
+            <div className="premium-card animate-scale-in" style={{ maxWidth: '400px', width: '100%', textAlign: 'center', padding: '3rem 2rem', border: '2px solid var(--primary)', borderRadius: '30px', position: 'relative' }}>
+               <button onClick={() => setShowMemberID(false)} style={{ position: 'absolute', top: '1.5rem', right: '1.5rem', background: 'none', border: 'none', color: 'white', cursor: 'pointer' }}><X size={24} /></button>
+               
+               <div style={{ marginBottom: '2rem' }}>
+                  <div style={{ width: '100px', height: '100px', background: 'var(--primary)', borderRadius: '50%', margin: '0 auto 1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '4px solid rgba(255,255,255,0.1)' }}>
+                     <UserCheck size={50} color="black" />
                   </div>
-                  {!scanning && !scanResult && <button onClick={startScanner} className="btn-primary">START SCANNER</button>}
-                  {scanning && <div id="reader" style={{ maxWidth: '400px', margin: '0 auto' }}></div>}
-                  {scanResult && <div style={{ padding: '1rem', background: 'var(--glass)', borderRadius: '15px' }}>{scanResult.success ? 'Success!' : scanResult.message}</div>}
+                  <h2 className="font-serif" style={{ marginBottom: '0.5rem' }}>{selectedMember.name}</h2>
+                  <p style={{ color: 'var(--primary)', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '2px' }}>{selectedMember.role}</p>
+                  <p style={{ color: 'var(--text-dim)', fontSize: '0.9rem' }}>Member since {new Date().getFullYear()}</p>
                </div>
-            </div>
-          )}
 
-          {activeTab === 'members' && (
-            <div className="premium-card">
-               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2rem' }}>
-                 <h2>Directory</h2>
-                 <input type="text" placeholder="Search..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} style={{ padding: '0.6rem 1rem', background: 'var(--glass)', border: '1px solid var(--glass-border)', borderRadius: '10px', color: 'white' }} />
+               <div style={{ background: 'white', padding: '1.5rem', borderRadius: '20px', display: 'inline-block', marginBottom: '2rem', boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }}>
+                  <QRCodeCanvas value={selectedMember.id} size={200} level="H" />
                </div>
-               <div style={{ overflowX: 'auto' }}>
-                 <table>
-                   <thead><tr style={{ textAlign: 'left' }}><th>Name</th><th>Role</th><th>Household</th><th>Actions</th></tr></thead>
-                   <tbody>
-                     {filteredMembers.map(m => (
-                       <tr key={m.id}><td>{m.name}</td><td>{m.role}</td><td>{m.family}</td><td><button className="btn-ghost">Edit</button></td></tr>
-                     ))}
-                   </tbody>
-                 </table>
+
+               <p style={{ color: 'var(--text-dim)', fontSize: '0.8rem', marginBottom: '2rem' }}>Member ID: {selectedMember.id}</p>
+
+               <div style={{ display: 'flex', gap: '1rem' }}>
+                  <button onClick={() => window.print()} className="btn-primary" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                    <Printer size={18} /> PRINT ID
+                  </button>
+                  <button onClick={() => setShowMemberID(false)} className="btn-ghost" style={{ flex: 1 }}>CLOSE</button>
                </div>
             </div>
-          )}
+          </div>
+        )}
+
+        {/* Header */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3rem', flexWrap: 'wrap' }}>
+          <div>
+            <h1 className="font-serif" style={{ fontSize: '3rem' }}>{dashboardTitle}</h1>
+            <p style={{ color: 'var(--text-dim)' }}>{dashboardSubtitle}</p>
+          </div>
+          <div style={{ display: 'flex', gap: '1rem' }}>
+             <button onClick={() => setShowAddMember(true)} className="btn-primary"><PlusCircle size={18} /> Enroll Member</button>
+          </div>
         </div>
+
+        {/* Navigation */}
+        <div style={{ display: 'flex', gap: '2rem', marginBottom: '3rem', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+           <button onClick={() => setActiveTab('scanner')} style={{ padding: '1rem 0', background: 'none', border: 'none', borderBottom: activeTab === 'scanner' ? '2px solid var(--primary)' : 'none', color: activeTab === 'scanner' ? 'white' : 'gray', cursor: 'pointer', fontWeight: 'bold' }}>SCANNER</button>
+           <button onClick={() => setActiveTab('members')} style={{ padding: '1rem 0', background: 'none', border: 'none', borderBottom: activeTab === 'members' ? '2px solid var(--primary)' : 'none', color: activeTab === 'members' ? 'white' : 'gray', cursor: 'pointer', fontWeight: 'bold' }}>DIRECTORY</button>
+        </div>
+
+        {activeTab === 'scanner' && (
+           <div style={{ textAlign: 'center', padding: '4rem 0' }}>
+              {!scanning && <button onClick={startScanner} className="btn-primary" style={{ padding: '2rem 4rem', fontSize: '1.5rem', borderRadius: '20px' }}><Scan size={30} /> START ATTENDANCE SCANNER</button>}
+              {scanning && <div id="reader" style={{ maxWidth: '500px', margin: '0 auto', border: '2px solid var(--primary)', borderRadius: '20px', overflow: 'hidden' }}></div>}
+           </div>
+        )}
+
+        {activeTab === 'members' && (
+           <div className="premium-card">
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2rem' }}>
+                 <div style={{ position: 'relative', width: '300px' }}>
+                    <Search style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', opacity: 0.3 }} size={18} />
+                    <input autoFocus placeholder="Search members..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} style={{ width: '100%', padding: '0.8rem 1rem 0.8rem 3rem', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '15px', color: 'white' }} />
+                 </div>
+              </div>
+              <table>
+                 <thead><tr style={{ textAlign: 'left', opacity: 0.5 }}><th>NAME</th><th>ROLE</th><th>HOUSEHOLD</th><th>ACTION</th></tr></thead>
+                 <tbody>
+                    {filteredMembers.map(m => (
+                       <tr key={m.id}>
+                          <td style={{ padding: '1rem 0' }}><b>{m.name}</b></td>
+                          <td><span style={{ fontSize: '0.7rem', background: 'rgba(242, 153, 0, 0.1)', color: 'var(--primary)', padding: '0.3rem 0.6rem', borderRadius: '5px' }}>{m.role?.toUpperCase()}</span></td>
+                          <td>{m.family}</td>
+                          <td><button onClick={() => openID(m)} className="btn-ghost" style={{ padding: '0.5rem 1rem', fontSize: '0.8rem' }}><Scan size={14} /> VIEW QR ID</button></td>
+                       </tr>
+                    ))}
+                 </tbody>
+              </table>
+           </div>
+        )}
       </div>
     </div>
   );
