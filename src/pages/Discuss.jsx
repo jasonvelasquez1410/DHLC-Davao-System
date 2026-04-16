@@ -292,7 +292,9 @@ const Discuss = () => {
               onChange={(e) => setNewMessage(e.target.value)} 
               style={{ flex: 1, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', padding: '1rem 1.5rem', borderRadius: '15px', color: 'white', outline: 'none', fontSize: '1rem' }}
             />
-            <button type="submit" className="btn-primary" style={{ width: '60px', height: '60px', borderRadius: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Send size={24} /></button>
+            <button type="submit" className="btn-primary" style={{ width: '55px', height: '55px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 15px var(--primary-glow)', transition: '0.3s' }}>
+              <Send size={24} color="white" style={{ marginLeft: '2px' }} />
+            </button>
          </form>
       </main>
 
