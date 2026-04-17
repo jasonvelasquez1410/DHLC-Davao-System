@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { db, storage, auth } from '../lib/firebase';
+import { db, storage } from '../lib/firebase';
 import { doc, onSnapshot, updateDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useAuth } from '../App';
@@ -17,7 +17,6 @@ const MemberDashboard = () => {
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef(null);
 
-  // Edit State
   const [editData, setEditData] = useState({
     nickname: '',
     lifeVerse: '',
@@ -26,16 +25,18 @@ const MemberDashboard = () => {
   });
 
   useEffect(() => {
-    if (!user?.id) return;
-    const unsub = onSnapshot(doc(db, 'users', user.id), (docS) => {
+    if (!user?.uid) return;
+    const unsub = onSnapshot(doc(db, 'users', user.uid), (docS) => {
       const data = docS.data();
-      setMemberData(data);
-      setEditData({
-        nickname: data.nickname || '',
-        lifeVerse: data.lifeVerse || '',
-        phone: data.phone || '',
-        address: data.address || ''
-      });
+      if (data) {
+        setMemberData(data);
+        setEditData({
+          nickname: data.nickname || '',
+          lifeVerse: data.lifeVerse || '',
+          phone: data.phone || '',
+          address: data.address || ''
+        });
+      }
     });
     return () => unsub();
   }, [user]);
@@ -45,10 +46,10 @@ const MemberDashboard = () => {
     if (!file) return;
     setUploading(true);
     try {
-      const storageRef = ref(storage, `profiles/${user.id}`);
+      const storageRef = ref(storage, `profiles/${user.uid}`);
       await uploadBytes(storageRef, file);
       const url = await getDownloadURL(storageRef);
-      await updateDoc(doc(db, 'users', user.id), { photoURL: url });
+      await updateDoc(doc(db, 'users', user.uid), { photoURL: url });
       alert("Profile photo updated! You look great! 🕊️");
     } catch (err) {
       alert("Upload failed. Please check image size.");
@@ -60,13 +61,13 @@ const MemberDashboard = () => {
   const handleSaveProfile = async (e) => {
     e.preventDefault();
     try {
-      await updateDoc(doc(db, 'users', user.id), editData);
+      await updateDoc(doc(db, 'users', user.uid), editData);
       setShowEdit(false);
       alert("Ministry Profile Saved!");
     } catch (err) { alert("Update failed."); }
   };
 
-  if (!memberData) return <div style={{ padding: '100px', textAlign: 'center' }}>Syncing with Heaven... 🕊️</div>;
+  if (!memberData) return <div className="hero" style={{ justifyContent: 'center' }}><div className="animate-fade-in"><h2 className="text-gradient">Connecting to DHLC...</h2></div></div>;
 
   return (
     <div className="container" style={{ paddingTop: '120px', paddingBottom: '60px' }}>
@@ -89,6 +90,7 @@ const MemberDashboard = () => {
                  </div>
                  <button 
                    onClick={() => fileInputRef.current.click()}
+                   disabled={uploading}
                    style={{ position: 'absolute', bottom: '25px', right: '15px', background: 'var(--primary)', border: 'none', color: 'black', width: '45px', height: '45px', borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 5px 15px rgba(0,0,0,0.3)' }}
                  >
                     <Camera size={20} />
@@ -96,7 +98,7 @@ const MemberDashboard = () => {
                  <input type="file" ref={fileInputRef} onChange={handlePhotoUpload} style={{ display: 'none' }} accept="image/*" />
               </div>
               <h1 className="font-serif" style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>{memberData.name}</h1>
-              <span style={{ color: 'var(--primary)', fontWeight: 'bold', letterSpacing: '2px', fontSize: '0.8rem' }}>{memberData.role.toUpperCase()} • DHLC DAVAO CITY</span>
+              <span style={{ color: 'var(--primary)', fontWeight: 'bold', letterSpacing: '2px', fontSize: '0.8rem' }}>{memberData.role?.toUpperCase()} • DHLC DAVAO CITY</span>
            </div>
 
            <div className="premium-card" style={{ padding: '2.5rem', background: 'var(--glass)' }}>
@@ -106,7 +108,7 @@ const MemberDashboard = () => {
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
                  <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}><Heart size={18} className="text-primary" /> <span><b>Life Verse:</b> {memberData.lifeVerse || 'Add your favorite scripture...'}</span></div>
-                 <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}><Star size={18} className="text-primary" /> <span><b>Nickname:</b> {memberData.nickname || memberData.name.split(' ')[0]}</span></div>
+                 <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}><Star size={18} className="text-primary" /> <span><b>Nickname:</b> {memberData.nickname || memberData.name?.split(' ')[0]}</span></div>
                  <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}><Phone size={18} className="text-primary" /> <span><b>Contact:</b> {memberData.phone || 'Enter phone number...'}</span></div>
                  <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}><MapPin size={18} className="text-primary" /> <span><b>Address:</b> {memberData.address || 'Enter residence...'}</span></div>
               </div>
@@ -116,11 +118,10 @@ const MemberDashboard = () => {
         {/* PROGRESS & ID SECTION */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '2.5rem' }}>
            
-           {/* DIGITAL ID CARD (UPGRADED WITH PHOTO) */}
            <div className="premium-card hover-effect" style={{ background: 'linear-gradient(135deg, #001a33, #002b4d)', border: '1px solid var(--primary)', position: 'relative', overflow: 'hidden' }}>
               <div style={{ position: 'absolute', top: '-50px', right: '-50px', width: '200px', height: '200px', background: 'rgba(242,153,0,0.05)', borderRadius: '50%' }}></div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem' }}>
-                 <img src="/logo.png" alt="DHLC" style={{ height: '35px', filter: 'brightness(0) invert(1)' }} />
+                 <span style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>DHLC</span>
                  <span style={{ fontSize: '0.65rem', letterSpacing: '2px', opacity: 0.5 }}>OFFICIAL MEMBER PASS</span>
               </div>
               
@@ -134,19 +135,18 @@ const MemberDashboard = () => {
                  </div>
                  <div>
                     <h3 className="font-serif" style={{ fontSize: '1.6rem', marginBottom: '0.2rem' }}>{memberData.nickname || memberData.name}</h3>
-                    <p style={{ color: 'var(--primary)', fontWeight: 'bold', fontSize: '0.75rem', letterSpacing: '1px' }}>{memberData.role.toUpperCase()}</p>
+                    <p style={{ color: 'var(--primary)', fontWeight: 'bold', fontSize: '0.75rem', letterSpacing: '1px' }}>{memberData.role?.toUpperCase()}</p>
                  </div>
               </div>
 
               <div style={{ background: 'white', padding: '15px', borderRadius: '15px', display: 'flex', justifyContent: 'center', marginBottom: '2rem', boxShadow: '0 10px 40px rgba(0,0,0,0.4)' }}>
-                 <QRCodeCanvas value={memberData.id} size={130} />
+                 <QRCodeCanvas value={user.uid} size={130} />
               </div>
               <div style={{ textAlign: 'center', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '1.5rem' }}>
                  <p style={{ fontSize: '0.6rem', letterSpacing: '1px', opacity: 0.5 }}>IDENTIFICATION SECURE • SCAN FOR SERVICE & EVENTS</p>
               </div>
            </div>
 
-           {/* GROWTH STEPS */}
            <div className="premium-card">
               <h3 className="font-serif" style={{ marginBottom: '2rem' }}>Spiritual Growth Tracking</h3>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
@@ -168,7 +168,6 @@ const MemberDashboard = () => {
                  ))}
               </div>
            </div>
-
         </div>
 
         {/* MODAL: EDIT PROFILE */}
@@ -181,24 +180,18 @@ const MemberDashboard = () => {
                 </div>
                 <form onSubmit={handleSaveProfile} style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
                    <div>
-                      <label style={{ fontSize: '0.75rem', opacity: 0.5, marginBottom: '5px', display: 'block' }}>NICKNAME / MINISTRY NAME</label>
-                      <input type="text" value={editData.nickname} onChange={(e) => setEditData({...editData, nickname: e.target.value})} style={{ width: '100%', padding: '0.8rem', background: '#001a33', border: '1px solid var(--glass-border)', color: 'white', borderRadius: '10px' }} placeholder="E.g. Bro Jason" />
+                      <label style={{ fontSize: '0.75rem', opacity: 0.5, marginBottom: '5px', display: 'block' }}>NICKNAME</label>
+                      <input type="text" value={editData.nickname} onChange={(e) => setEditData({...editData, nickname: e.target.value})} style={{ width: '100%', padding: '0.8rem', background: '#001a33', border: '1px solid var(--glass-border)', color: 'white', borderRadius: '10px' }} />
                    </div>
                    <div>
-                      <label style={{ fontSize: '0.75rem', opacity: 0.5, marginBottom: '5px', display: 'block' }}>LIFE VERSE (SCRIPTURE)</label>
-                      <input type="text" value={editData.lifeVerse} onChange={(e) => setEditData({...editData, lifeVerse: e.target.value})} style={{ width: '100%', padding: '0.8rem', background: '#001a33', border: '1px solid var(--glass-border)', color: 'white', borderRadius: '10px' }} placeholder="E.g. Jeremiah 29:11" />
+                      <label style={{ fontSize: '0.75rem', opacity: 0.5, marginBottom: '5px', display: 'block' }}>LIFE VERSE</label>
+                      <input type="text" value={editData.lifeVerse} onChange={(e) => setEditData({...editData, lifeVerse: e.target.value})} style={{ width: '100%', padding: '0.8rem', background: '#001a33', border: '1px solid var(--glass-border)', color: 'white', borderRadius: '10px' }} />
                    </div>
                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                      <div>
-                        <label style={{ fontSize: '0.75rem', opacity: 0.5, marginBottom: '5px', display: 'block' }}>CONTACT #</label>
-                        <input type="text" value={editData.phone} onChange={(e) => setEditData({...editData, phone: e.target.value})} style={{ width: '100%', padding: '0.8rem', background: '#001a33', border: '1px solid var(--glass-border)', color: 'white', borderRadius: '10px' }} />
-                      </div>
-                      <div>
-                        <label style={{ fontSize: '0.75rem', opacity: 0.5, marginBottom: '5px', display: 'block' }}>ADDRESS</label>
-                        <input type="text" value={editData.address} onChange={(e) => setEditData({...editData, address: e.target.value})} style={{ width: '100%', padding: '0.8rem', background: '#001a33', border: '1px solid var(--glass-border)', color: 'white', borderRadius: '10px' }} />
-                      </div>
+                      <input type="text" placeholder="Contact #" value={editData.phone} onChange={(e) => setEditData({...editData, phone: e.target.value})} style={{ width: '100%', padding: '0.8rem', background: '#001a33', border: '1px solid var(--glass-border)', color: 'white', borderRadius: '10px' }} />
+                      <input type="text" placeholder="Address" value={editData.address} onChange={(e) => setEditData({...editData, address: e.target.value})} style={{ width: '100%', padding: '0.8rem', background: '#001a33', border: '1px solid var(--glass-border)', color: 'white', borderRadius: '10px' }} />
                    </div>
-                   <button type="submit" className="btn-primary" style={{ padding: '1rem', marginTop: '1rem' }}><Save size={18} /> Update My Profile</button>
+                   <button type="submit" className="btn-primary" style={{ padding: '1rem', marginTop: '1rem' }}>Update My Profile</button>
                 </form>
              </div>
           </div>
