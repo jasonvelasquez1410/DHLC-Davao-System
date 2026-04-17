@@ -112,13 +112,13 @@ const LandingPage = () => {
               </a>
             </div>
             
-            <div style={{ flex: '1', display: 'flex', justifyContent: 'center', background: 'white', borderRadius: '12px', padding: '10px', boxShadow: '0 10px 40px rgba(0, 0, 0, 0.5)' }}>
-              {/* Official Facebook Page Plugin IFrame */}
+            <div style={{ flex: '1', display: 'flex', justifyContent: 'center', background: 'white', borderRadius: '12px', padding: '10px', boxShadow: '0 10px 40px rgba(0, 0, 0, 0.5)', maxWidth: '100%', overflow: 'hidden' }}>
+              {/* Official Facebook Page Plugin IFrame - Responsive */}
               <iframe 
-                src="https://www.facebook.com/plugins/page.php?href=https%3A%2F%2Fwww.facebook.com%2Fdhlcdavaocity&tabs=timeline&width=340&height=500&small_header=false&adapt_container_width=true&hide_cover=false&show_facepile=true&appId" 
-                width="340" 
+                src="https://www.facebook.com/plugins/page.php?href=https%3A%2F%2Fwww.facebook.com%2Fdhlcdavaocity&tabs=timeline&width=500&height=500&small_header=false&adapt_container_width=true&hide_cover=false&show_facepile=true&appId" 
+                width="100%" 
                 height="500" 
-                style={{ border: 'none', overflow: 'hidden' }} 
+                style={{ border: 'none', overflow: 'hidden', minWidth: '280px', maxWidth: '500px' }} 
                 scrolling="no" 
                 frameBorder="0" 
                 allowFullScreen={true} 
