@@ -6,7 +6,7 @@ import { useAuth } from '../App';
 import { 
   User, Award, Star, Shield, Clock, 
   ChevronRight, Camera, Edit3, Heart, 
-  MapPin, Phone, Mail, Save, X, Settings
+  MapPin, Phone, Mail, Save, X, Settings, CheckCircle2
 } from 'lucide-react';
 import { QRCodeCanvas } from 'qrcode.react';
 
