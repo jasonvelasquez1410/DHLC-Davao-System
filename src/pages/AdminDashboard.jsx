@@ -319,7 +319,16 @@ const AdminDashboard = () => {
                     <tbody>
                        {filteredMembers.map(m => (
                           <tr key={m.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.02)' }}>
-                             <td style={{ padding: '1rem 0' }}><b>{m.name}</b></td>
+                             <td style={{ padding: '1rem 0' }}>
+                                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                    {m.photoURL ? (
+                                      <img src={m.photoURL} alt="pfp" style={{ width: '32px', height: '32px', borderRadius: '50%', objectFit: 'cover', border: '1px solid var(--primary)' }} />
+                                    ) : (
+                                      <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><User size={12} opacity={0.2}/></div>
+                                    )}
+                                    <b>{m.name}</b>
+                                 </div>
+                              </td>
                              <td>
                                 <select 
                                    value={m.role || 'member'} 

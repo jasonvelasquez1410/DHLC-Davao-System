@@ -1,171 +1,209 @@
-import React, { useState, useEffect } from 'react';
-import { db } from '../lib/firebase';
-import { collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
+import React, { useState, useEffect, useRef } from 'react';
+import { db, storage, auth } from '../lib/firebase';
+import { doc, onSnapshot, updateDoc } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useAuth } from '../App';
 import { 
-  User, Award, Calendar, Clock, ShieldCheck, 
-  ArrowRight, Download, Scan, CheckCircle2, 
-  Star, Zap, Activity, QrCode
+  User, Award, Star, Shield, Clock, 
+  ChevronRight, Camera, Edit3, Heart, 
+  MapPin, Phone, Mail, Save, X, Settings
 } from 'lucide-react';
 import { QRCodeCanvas } from 'qrcode.react';
 
 const MemberDashboard = () => {
   const { user } = useAuth();
-  const [history, setHistory] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [memberData, setMemberData] = useState(null);
+  const [showEdit, setShowEdit] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef(null);
 
-  // Sample progress data - can be linked to Firestore later
-  const progressItems = [
-    { title: 'Foundations of Faith', status: 'completed', date: 'Mar 12, 2026' },
-    { title: 'Divinity Level 1', status: 'in-progress', percent: 65 },
-    { title: 'Ministry Training', status: 'locked' }
-  ];
+  // Edit State
+  const [editData, setEditData] = useState({
+    nickname: '',
+    lifeVerse: '',
+    phone: '',
+    address: ''
+  });
 
   useEffect(() => {
-    const fetchHistory = async () => {
-      if (!user?.uid) return;
-      try {
-        const q = query(
-          collection(db, 'attendance'), 
-          where('userId', '==', user.uid),
-          orderBy('timestamp', 'desc'),
-          limit(5)
-        );
-        const snap = await getDocs(q);
-        setHistory(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-        setLoading(false);
-      } catch (err) {
-        console.error(err);
-        setLoading(false);
-      }
-    };
-    fetchHistory();
-  }, [user?.uid]);
+    if (!user?.id) return;
+    const unsub = onSnapshot(doc(db, 'users', user.id), (docS) => {
+      const data = docS.data();
+      setMemberData(data);
+      setEditData({
+        nickname: data.nickname || '',
+        lifeVerse: data.lifeVerse || '',
+        phone: data.phone || '',
+        address: data.address || ''
+      });
+    });
+    return () => unsub();
+  }, [user]);
 
-  const downloadQR = () => {
-    const canvas = document.getElementById("qr-canvas");
-    if (!canvas) return;
-    const pngUrl = canvas.toDataURL("image/png").replace("image/png", "image/octet-stream");
-    let downloadLink = document.createElement("a");
-    downloadLink.href = pngUrl;
-    downloadLink.download = `${user?.name || 'Member'}_DHLC_ID.png`;
-    document.body.appendChild(downloadLink);
-    downloadLink.click();
-    document.body.removeChild(downloadLink);
+  const handlePhotoUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const storageRef = ref(storage, `profiles/${user.id}`);
+      await uploadBytes(storageRef, file);
+      const url = await getDownloadURL(storageRef);
+      await updateDoc(doc(db, 'users', user.id), { photoURL: url });
+      alert("Profile photo updated! You look great! 🕊️");
+    } catch (err) {
+      alert("Upload failed. Please check image size.");
+    } finally {
+      setUploading(false);
+    }
   };
 
+  const handleSaveProfile = async (e) => {
+    e.preventDefault();
+    try {
+      await updateDoc(doc(db, 'users', user.id), editData);
+      setShowEdit(false);
+      alert("Ministry Profile Saved!");
+    } catch (err) { alert("Update failed."); }
+  };
+
+  if (!memberData) return <div style={{ padding: '100px', textAlign: 'center' }}>Syncing with Heaven... 🕊️</div>;
+
   return (
-    <div className="hero" style={{ paddingTop: '100px', display: 'block', minHeight: '100vh' }}>
-      <div className="container" style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 20px' }}>
+    <div className="container" style={{ paddingTop: '120px', paddingBottom: '60px' }}>
+      <div className="animate-fade-in">
         
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '2.5rem' }}>
-          
-          {/* Left Column: ID & Profile */}
-          <div className="animate-fade-in">
-            <div className="premium-card" style={{ textAlign: 'center', padding: '3rem 2rem', position: 'relative' }}>
-               <div style={{ position: 'absolute', top: '1.5rem', right: '1.5rem' }}>
-                  <ShieldCheck className="text-primary" size={24} />
-               </div>
-               
-               <div style={{ 
-                 width: '120px', 
-                 height: '120px', 
-                 borderRadius: '50%', 
-                 border: '4px solid var(--primary)', 
-                 margin: '0 auto 1.5rem',
-                 padding: '5px',
-                 boxShadow: '0 0 30px var(--primary-glow)'
-               }}>
-                 <img 
-                   src={user?.photoURL || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=200&q=80'} 
-                   alt="Profile" 
-                   style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} 
-                 />
-               </div>
-
-               <h1 className="font-serif" style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>{user?.name || 'Vibrant Member'}</h1>
-               <p style={{ color: 'var(--primary)', fontWeight: 'bold', letterSpacing: '2px', fontSize: '0.9rem', marginBottom: '2rem' }}>
-                 {user?.role?.toUpperCase() || 'MEMBER'}
-               </p>
-
-               {/* Digital QR ID Section */}
-               <div style={{ background: 'rgba(255,255,255,0.02)', borderRadius: '24px', padding: '2rem', border: '1px solid var(--glass-border)', marginBottom: '2rem' }}>
-                  <p style={{ fontSize: '0.75rem', color: 'var(--text-dim)', marginBottom: '1.5rem', fontWeight: 'bold' }}>SCAN FOR SERVICE ATTENDANCE</p>
-                  <div style={{ background: 'white', padding: '1rem', borderRadius: '15px', display: 'inline-block', boxShadow: '0 0 40px rgba(0,0,0,0.5)' }}>
-                    <QRCodeCanvas id="qr-canvas" value={user?.uid || 'no-id'} size={160} />
-                  </div>
-                  <div style={{ marginTop: '1.5rem', display: 'flex', gap: '10px', justifyContent: 'center' }}>
-                     <button className="btn-primary" style={{ fontSize: '0.85rem', padding: '10px 20px', width: '100%' }} onClick={downloadQR}>
-                        <Download size={16} /> DOWNLOAD DIGITAL ID
-                     </button>
-                  </div>
-               </div>
-            </div>
-          </div>
-
-          {/* Right Column: Mission Progress & Activity */}
-          <div className="animate-fade-in" style={{ animationDelay: '0.2s' }}>
-            <h2 className="font-serif" style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <Zap className="text-primary" /> Mission Progress
-            </h2>
-            
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
-              {progressItems.map((item, idx) => (
-                <div key={idx} className="premium-card hover-effect" style={{ padding: '1.2rem 1.5rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: item.percent ? '1rem' : '0' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                      {item.status === 'completed' ? <CheckCircle2 className="text-green-400" size={20} /> : 
-                       item.status === 'locked' ? <ShieldCheck style={{ opacity: 0.3 }} size={20} /> :
-                       <Activity className="text-primary" size={20} />}
-                      <span style={{ fontWeight: '600', opacity: item.status === 'locked' ? 0.3 : 1 }}>{item.title}</span>
+        {/* PROFILE HEADER SECTION */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '3rem', marginBottom: '4rem', alignItems: 'center' }}>
+           <div style={{ textAlign: 'center', position: 'relative' }}>
+              <div style={{ position: 'relative', display: 'inline-block' }}>
+                 <div style={{ 
+                    width: '220px', height: '220px', borderRadius: '50%', background: 'linear-gradient(45deg, var(--primary), #FFD700)', padding: '5px', boxShadow: '0 0 30px rgba(242,153,0,0.3)', marginBottom: '1.5rem', overflow: 'hidden'
+                 }}>
+                    <div style={{ width: '100%', height: '100%', borderRadius: '50%', background: '#001a33', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                       {memberData.photoURL ? (
+                         <img src={memberData.photoURL} alt="User" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                       ) : (
+                         <User size={80} style={{ opacity: 0.1 }} />
+                       )}
                     </div>
-                    {item.date && <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>{item.date}</span>}
-                  </div>
-                  
-                  {item.percent && (
-                    <div style={{ height: '8px', background: 'rgba(255,255,255,0.05)', borderRadius: '4px', overflow: 'hidden' }}>
-                      <div style={{ width: `${item.percent}%`, height: '100%', background: 'linear-gradient(90deg, var(--primary), #FFB733)', boxShadow: '0 0 15px var(--primary-glow)' }}></div>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-
-            {/* Attendance History Segment */}
-            <div className="premium-card" style={{ marginTop: '2.5rem', padding: '1.5rem' }}>
-               <h3 className="font-serif" style={{ marginBottom: '1.2rem', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                 <Clock size={18} className="text-primary" /> Recent Services
-               </h3>
-               {history.length > 0 ? (
-                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
-                    {history.map(record => (
-                      <div key={record.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
-                        <span style={{ fontSize: '0.9rem' }}><b>{record.service}</b></span>
-                        <span style={{ fontSize: '0.8rem', color: 'var(--text-dim)' }}>{record.timestamp?.toDate().toLocaleDateString()}</span>
-                      </div>
-                    ))}
                  </div>
-               ) : (
-                 <p style={{ color: 'var(--text-dim)', fontSize: '0.85rem' }}>No attendance records found yet.</p>
-               )}
-            </div>
+                 <button 
+                   onClick={() => fileInputRef.current.click()}
+                   style={{ position: 'absolute', bottom: '25px', right: '15px', background: 'var(--primary)', border: 'none', color: 'black', width: '45px', height: '45px', borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 5px 15px rgba(0,0,0,0.3)' }}
+                 >
+                    <Camera size={20} />
+                 </button>
+                 <input type="file" ref={fileInputRef} onChange={handlePhotoUpload} style={{ display: 'none' }} accept="image/*" />
+              </div>
+              <h1 className="font-serif" style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>{memberData.name}</h1>
+              <span style={{ color: 'var(--primary)', fontWeight: 'bold', letterSpacing: '2px', fontSize: '0.8rem' }}>{memberData.role.toUpperCase()} • DHLC DAVAO CITY</span>
+           </div>
 
-            {/* Quick Stats Grid */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.2rem', marginTop: '2rem' }}>
-               <div className="premium-card" style={{ padding: '1.5rem', textAlign: 'center', background: 'rgba(255,255,255,0.02)' }}>
-                  <Calendar className="text-primary" style={{ margin: '0 auto 10px' }} size={24} />
-                  <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>12</div>
-                  <div style={{ fontSize: '0.7rem', color: 'var(--text-dim)', textTransform: 'uppercase' }}>SERVICES</div>
-               </div>
-               <div className="premium-card" style={{ padding: '1.5rem', textAlign: 'center', background: 'rgba(242,153,0,0.05)' }}>
-                  <Star className="text-primary" style={{ margin: '0 auto 10px' }} size={24} />
-                  <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>GOLD</div>
-                  <div style={{ fontSize: '0.7rem', color: 'var(--text-dim)', textTransform: 'uppercase' }}>LEVEL</div>
-               </div>
-            </div>
-          </div>
+           <div className="premium-card" style={{ padding: '2.5rem', background: 'var(--glass)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+                 <h2 className="font-serif" style={{ margin: 0 }}>Ministry Profile</h2>
+                 <button onClick={() => setShowEdit(true)} className="btn-ghost" style={{ padding: '8px 15px', borderRadius: '20px' }}><Edit3 size={16} /> Edit Profile</button>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
+                 <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}><Heart size={18} className="text-primary" /> <span><b>Life Verse:</b> {memberData.lifeVerse || 'Add your favorite scripture...'}</span></div>
+                 <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}><Star size={18} className="text-primary" /> <span><b>Nickname:</b> {memberData.nickname || memberData.name.split(' ')[0]}</span></div>
+                 <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}><Phone size={18} className="text-primary" /> <span><b>Contact:</b> {memberData.phone || 'Enter phone number...'}</span></div>
+                 <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}><MapPin size={18} className="text-primary" /> <span><b>Address:</b> {memberData.address || 'Enter residence...'}</span></div>
+              </div>
+           </div>
+        </div>
+
+        {/* PROGRESS & ID SECTION */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '2.5rem' }}>
+           
+           {/* DIGITAL ID CARD (UPGRADED WITH PHOTO) */}
+           <div className="premium-card hover-effect" style={{ background: 'linear-gradient(135deg, #001a33, #002b4d)', border: '1px solid var(--primary)', position: 'relative', overflow: 'hidden' }}>
+              <div style={{ position: 'absolute', top: '-50px', right: '-50px', width: '200px', height: '200px', background: 'rgba(242,153,0,0.05)', borderRadius: '50%' }}></div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem' }}>
+                 <img src="/logo.png" alt="DHLC" style={{ height: '35px', filter: 'brightness(0) invert(1)' }} />
+                 <span style={{ fontSize: '0.65rem', letterSpacing: '2px', opacity: 0.5 }}>OFFICIAL MEMBER PASS</span>
+              </div>
+              
+              <div style={{ display: 'flex', gap: '2rem', alignItems: 'center', marginBottom: '2.5rem' }}>
+                 <div style={{ width: '85px', height: '85px', borderRadius: '15px', border: '1px solid var(--primary)', overflow: 'hidden' }}>
+                    {memberData.photoURL ? (
+                      <img src={memberData.photoURL} alt="ID" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    ) : (
+                      <div style={{ width: '100%', height: '100%', background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><User size={30} opacity={0.1}/></div>
+                    )}
+                 </div>
+                 <div>
+                    <h3 className="font-serif" style={{ fontSize: '1.6rem', marginBottom: '0.2rem' }}>{memberData.nickname || memberData.name}</h3>
+                    <p style={{ color: 'var(--primary)', fontWeight: 'bold', fontSize: '0.75rem', letterSpacing: '1px' }}>{memberData.role.toUpperCase()}</p>
+                 </div>
+              </div>
+
+              <div style={{ background: 'white', padding: '15px', borderRadius: '15px', display: 'flex', justifyContent: 'center', marginBottom: '2rem', boxShadow: '0 10px 40px rgba(0,0,0,0.4)' }}>
+                 <QRCodeCanvas value={memberData.id} size={130} />
+              </div>
+              <div style={{ textAlign: 'center', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '1.5rem' }}>
+                 <p style={{ fontSize: '0.6rem', letterSpacing: '1px', opacity: 0.5 }}>IDENTIFICATION SECURE • SCAN FOR SERVICE & EVENTS</p>
+              </div>
+           </div>
+
+           {/* GROWTH STEPS */}
+           <div className="premium-card">
+              <h3 className="font-serif" style={{ marginBottom: '2rem' }}>Spiritual Growth Tracking</h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+                 {[
+                   { title: 'New Believer', icon: <Award size={20} />, completed: true, date: 'Mar 2026' },
+                   { title: 'Divinity Class I', icon: <Star size={20} />, completed: true, date: 'Apr 2026' },
+                   { title: 'Worker Trainee', icon: <Shield size={20} />, completed: false, date: 'Ongoing' }
+                 ].map((step, i) => (
+                   <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', opacity: step.completed ? 1 : 0.4 }}>
+                      <div style={{ 
+                        width: '50px', height: '50px', borderRadius: '12px', background: step.completed ? 'rgba(242,153,0,0.1)' : 'rgba(255,255,255,0.05)', color: step.completed ? 'var(--primary)' : 'white', display: 'flex', alignItems: 'center', justifyContent: 'center'
+                      }}>{step.icon}</div>
+                      <div style={{ flex: 1 }}>
+                         <h4 style={{ margin: 0 }}>{step.title}</h4>
+                         <p style={{ fontSize: '0.75rem', opacity: 0.5, margin: 0 }}>{step.date}</p>
+                      </div>
+                      {step.completed && <CheckCircle2 size={20} color="#2ecc71" />}
+                   </div>
+                 ))}
+              </div>
+           </div>
 
         </div>
+
+        {/* MODAL: EDIT PROFILE */}
+        {showEdit && (
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.92)', zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+             <div className="premium-card" style={{ maxWidth: '450px', width: '100%', border: '1px solid var(--primary)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2rem' }}>
+                   <h2 className="font-serif">Personalize Membership</h2>
+                   <button onClick={() => setShowEdit(false)} className="btn-ghost"><X size={20}/></button>
+                </div>
+                <form onSubmit={handleSaveProfile} style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
+                   <div>
+                      <label style={{ fontSize: '0.75rem', opacity: 0.5, marginBottom: '5px', display: 'block' }}>NICKNAME / MINISTRY NAME</label>
+                      <input type="text" value={editData.nickname} onChange={(e) => setEditData({...editData, nickname: e.target.value})} style={{ width: '100%', padding: '0.8rem', background: '#001a33', border: '1px solid var(--glass-border)', color: 'white', borderRadius: '10px' }} placeholder="E.g. Bro Jason" />
+                   </div>
+                   <div>
+                      <label style={{ fontSize: '0.75rem', opacity: 0.5, marginBottom: '5px', display: 'block' }}>LIFE VERSE (SCRIPTURE)</label>
+                      <input type="text" value={editData.lifeVerse} onChange={(e) => setEditData({...editData, lifeVerse: e.target.value})} style={{ width: '100%', padding: '0.8rem', background: '#001a33', border: '1px solid var(--glass-border)', color: 'white', borderRadius: '10px' }} placeholder="E.g. Jeremiah 29:11" />
+                   </div>
+                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                      <div>
+                        <label style={{ fontSize: '0.75rem', opacity: 0.5, marginBottom: '5px', display: 'block' }}>CONTACT #</label>
+                        <input type="text" value={editData.phone} onChange={(e) => setEditData({...editData, phone: e.target.value})} style={{ width: '100%', padding: '0.8rem', background: '#001a33', border: '1px solid var(--glass-border)', color: 'white', borderRadius: '10px' }} />
+                      </div>
+                      <div>
+                        <label style={{ fontSize: '0.75rem', opacity: 0.5, marginBottom: '5px', display: 'block' }}>ADDRESS</label>
+                        <input type="text" value={editData.address} onChange={(e) => setEditData({...editData, address: e.target.value})} style={{ width: '100%', padding: '0.8rem', background: '#001a33', border: '1px solid var(--glass-border)', color: 'white', borderRadius: '10px' }} />
+                      </div>
+                   </div>
+                   <button type="submit" className="btn-primary" style={{ padding: '1rem', marginTop: '1rem' }}><Save size={18} /> Update My Profile</button>
+                </form>
+             </div>
+          </div>
+        )}
+
       </div>
     </div>
   );

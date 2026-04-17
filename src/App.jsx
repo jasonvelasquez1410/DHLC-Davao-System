@@ -144,8 +144,13 @@ const Navbar = () => {
                 <Link to="/command-center" className="nav-link" style={{color: 'var(--primary)', fontWeight: 'bold'}}>Leadership Hub</Link>
               </>
             )}
-            <div style={{ marginRight: '1rem', color: 'var(--text-dim)', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '5px' }}>
-              <User size={14} /> <span>Welcome, {user.name?.split(' ')[0]}</span>
+            <div style={{ marginRight: '1rem', color: 'var(--text-dim)', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              {user.photoURL ? (
+                <img src={user.photoURL} alt="Profile" style={{ width: '28px', height: '28px', borderRadius: '50%', border: '1px solid var(--primary)' }} />
+              ) : (
+                <User size={14} />
+              )}
+              <span>Welcome, {user.name?.split(' ')[0]}</span>
             </div>
             <button onClick={logout} className="btn-primary" style={{ padding: '0.6rem 1.2rem', fontSize: '0.9rem' }}>
               <LogOut size={16} /> Logout
