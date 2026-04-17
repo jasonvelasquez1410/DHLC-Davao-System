@@ -1,16 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { db } from '../lib/firebase';
 import { collection, query, orderBy, onSnapshot, limit, where, addDoc, serverTimestamp, getDocs } from 'firebase/firestore';
 import { useAuth } from '../App';
 import { 
-  Activity, Users, Star, DollarSign, CheckCircle2, 
+  Activity, Users, Star, CheckCircle2, 
   TrendingUp, Calendar, AlertCircle, FileText, ChevronRight,
-  Award, BookOpen, Phone, MapPin, UserPlus, Search, Filter, Plus, X, Download, PieChart
+  Award, BookOpen, Phone, MapPin, UserPlus, Search, Filter, Plus, X, Download, PieChart, Upload
 } from 'lucide-react';
 
 const HeadPastorDashboard = () => {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('overview');
+  const importInputRef = useRef(null);
   
   // Data State
   const [activityFeed, setActivityFeed] = useState([]);
@@ -26,16 +27,18 @@ const HeadPastorDashboard = () => {
   
   // Accountant Tools
   const [showAddTithe, setShowAddTithe] = useState(false);
+  const [importing, setImporting] = useState(false);
   const [newTithe, setNewTithe] = useState({ memberId: '', name: '', amount: '', month: new Date().getMonth() + 1, year: new Date().getFullYear(), fundType: 'General Tithe' });
 
   const isAccountant = user?.role === 'accountant' || user?.email === 'gmcebana.auditor@gmail.com' || user?.email === 'jasonvelasquez1410@gmail.com' || user?.role === 'admin';
 
   // Constants
-  const MONTHLY_GOAL = 50000; // Example goal, can be customized
+  const MONTHLY_GOAL = 50000;
   const FUND_TYPES = ['General Tithe', 'Mission Fund', 'Building Fund', 'Love Offering', 'Other'];
+  const PESO = "₱";
 
   useEffect(() => {
-    // 1. Fetch Users (Filter out the Architect/Admin for clean ministry data)
+    // 1. Fetch Users
     const unsubUsers = onSnapshot(collection(db, 'users'), (snapshot) => {
       const userList = snapshot.docs
         .map(doc => ({ id: doc.id, ...doc.data() }))
@@ -51,7 +54,7 @@ const HeadPastorDashboard = () => {
       setTithingData(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
     });
 
-    // 3. Activity Feed (Attendance)
+    // 3. Activity Feed
     const qActivity = query(collection(db, 'attendance'), orderBy('timestamp', 'desc'), limit(10));
     const unsubActivity = onSnapshot(qActivity, (snapshot) => {
       setActivityFeed(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
@@ -80,9 +83,47 @@ const HeadPastorDashboard = () => {
         verified: true
       });
       setShowAddTithe(false);
-      setNewTithe({ memberId: '', name: '', amount: '', month: new Date().getMonth() + 1, year: 2026, fundType: 'General Tithe' });
-      alert("Successful! Financial record added to the ledger.");
+      setNewTithe({ memberId: '', name: '', amount: '', month: filterMonth, year: filterYear, fundType: 'General Tithe' });
     } catch (err) { alert("Error recording record."); }
+  };
+
+  const handleImportCSV = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setImporting(true);
+
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      try {
+        const text = event.target.result;
+        const rows = text.split('\n').slice(1); // Skip header
+        
+        let count = 0;
+        for (const row of rows) {
+          const [name, amount, type, month, year] = row.split(',');
+          if (name && amount) {
+            await addDoc(collection(db, 'tithes'), {
+              name: name.trim(),
+              amount: parseFloat(amount),
+              fundType: type?.trim() || 'General Tithe',
+              month: parseInt(month) || filterMonth,
+              year: parseInt(year) || filterYear,
+              role: 'Imported',
+              recordedBy: 'system_import',
+              timestamp: serverTimestamp(),
+              verified: true
+            });
+            count++;
+          }
+        }
+        alert(`Successfully imported ${count} legacy results!`);
+      } catch (err) {
+        alert("Import failed. Format must be: Name, Amount, Type, Month, Year");
+      } finally {
+        setImporting(false);
+      }
+    };
+    reader.readAsText(file);
   };
 
   const exportToCSV = () => {
@@ -94,15 +135,11 @@ const HeadPastorDashboard = () => {
       r.fundType,
       r.amount
     ]);
-
-    const csvContent = "data:text/csv;charset=utf-8," 
-      + headers.join(",") + "\n"
-      + rows.map(e => e.join(",")).join("\n");
-
+    const csvContent = "data:text/csv;charset=utf-8," + headers.join(",") + "\n" + rows.map(e => e.join(",")).join("\n");
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `DHLC_Finance_Report_${filterMonth}_${filterYear}.csv`);
+    link.setAttribute("download", `DHLC_Finance_Report.csv`);
     document.body.appendChild(link);
     link.click();
   };
@@ -118,11 +155,12 @@ const HeadPastorDashboard = () => {
   const totalTithes = filteredFinance.reduce((sum, r) => sum + (r.amount || 0), 0);
   const goalProgress = (totalTithes / MONTHLY_GOAL) * 100;
 
-  // Calculate Breakdown
   const breakdown = FUND_TYPES.reduce((acc, type) => {
     acc[type] = filteredFinance.filter(r => r.fundType === type).reduce((sum, r) => sum + (r.amount || 0), 0);
     return acc;
   }, {});
+
+  const currentMonthName = new Date(0, filterMonth - 1).toLocaleString('en', {month: 'long'});
 
   return (
     <div className="container" style={{ paddingTop: '120px', paddingBottom: '60px' }}>
@@ -136,39 +174,24 @@ const HeadPastorDashboard = () => {
                  <h2 className="font-serif">New Ledger Entry</h2>
                  <button onClick={() => setShowAddTithe(false)} className="btn-ghost"><X size={20}/></button>
                </div>
-               
                <form onSubmit={handleRecordTithe} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                  <div>
-                    <label style={{ fontSize: '0.8rem', opacity: 0.5, marginBottom: '5px', display: 'block' }}>MEMBER / LEADER</label>
-                    <select value={newTithe.memberId} onChange={(e) => setNewTithe({...newTithe, memberId: e.target.value})} style={{ width: '100%', padding: '0.8rem', background: '#001a33', border: '1px solid rgba(255,255,255,0.1)', color: 'white', borderRadius: '10px' }} required>
-                      <option value="">Select giver...</option>
-                      {members.map(m => <option key={m.id} value={m.id}>{m.name} ({m.role})</option>)}
-                    </select>
-                  </div>
-
+                  <select value={newTithe.memberId} onChange={(e) => setNewTithe({...newTithe, memberId: e.target.value})} style={{ width: '100%', padding: '0.8rem', background: '#001a33', border: '1px solid rgba(255,255,255,0.1)', color: 'white', borderRadius: '10px' }} required>
+                    <option value="">Select giver...</option>
+                    {members.map(m => <option key={m.id} value={m.id}>{m.name} ({m.role})</option>)}
+                  </select>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                    <div>
-                      <label style={{ fontSize: '0.8rem', opacity: 0.5, marginBottom: '5px', display: 'block' }}>FUND CATEGORY</label>
-                      <select value={newTithe.fundType} onChange={(e) => setNewTithe({...newTithe, fundType: e.target.value})} style={{ width: '100%', padding: '0.8rem', background: '#001a33', border: '1px solid rgba(255,255,255,0.1)', color: 'white', borderRadius: '10px' }}>
-                        {FUND_TYPES.map(type => <option key={type} value={type}>{type}</option>)}
-                      </select>
-                    </div>
-                    <div>
-                      <label style={{ fontSize: '0.8rem', opacity: 0.5, marginBottom: '5px', display: 'block' }}>AMOUNT (₱)</label>
-                      <input type="number" placeholder="0.00" value={newTithe.amount} onChange={(e) => setNewTithe({...newTithe, amount: e.target.value})} style={{ width: '100%', padding: '0.8rem', background: '#001a33', border: '1px solid rgba(255,255,255,0.1)', color: 'white', borderRadius: '10px' }} required />
-                    </div>
+                    <select value={newTithe.fundType} onChange={(e) => setNewTithe({...newTithe, fundType: e.target.value})} style={{ width: '100%', padding: '0.8rem', background: '#001a33', border: '1px solid rgba(255,255,255,0.1)', color: 'white', borderRadius: '10px' }}>
+                      {FUND_TYPES.map(type => <option key={type} value={type}>{type}</option>)}
+                    </select>
+                    <input type="number" placeholder={`Amount (${PESO})`} value={newTithe.amount} onChange={(e) => setNewTithe({...newTithe, amount: e.target.value})} style={{ width: '100%', padding: '0.8rem', background: '#001a33', border: '1px solid rgba(255,255,255,0.1)', color: 'white', borderRadius: '10px' }} required />
                   </div>
-
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                      <select value={newTithe.month} onChange={(e) => setNewTithe({...newTithe, month: e.target.value})} style={{ padding: '0.8rem', background: '#001a33', color: 'white', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px' }}>
                         {[...Array(12)].map((_, i) => <option key={i+1} value={i+1}>{new Date(0, i).toLocaleString('en', {month: 'long'})}</option>)}
                      </select>
                      <input type="number" placeholder="Year" value={newTithe.year} onChange={(e) => setNewTithe({...newTithe, year: e.target.value})} style={{ padding: '0.8rem', background: '#001a33', border: '1px solid rgba(255,255,255,0.1)', color: 'white', borderRadius: '10px' }} />
                   </div>
-                  
-                  <button type="submit" className="btn-primary" style={{ padding: '1.2rem', marginTop: '1rem' }}>
-                    <CheckCircle2 size={18} /> Record & Sync to Ledger
-                  </button>
+                  <button type="submit" className="btn-primary" style={{ padding: '1.2rem', marginTop: '1rem' }}><CheckCircle2 size={18} /> Record & Sync to Ledger</button>
                </form>
             </div>
           </div>
@@ -180,14 +203,20 @@ const HeadPastorDashboard = () => {
             <h1 className="font-serif" style={{ fontSize: '3rem' }}>Leadership <span className="text-gradient">Hub</span></h1>
             <p style={{ color: 'var(--text-dim)' }}>DHLC Ministry Oversight & Faithfulness Ledger</p>
           </div>
-          <div style={{ display: 'flex', gap: '1rem' }}>
-             <div style={{ background: 'var(--glass)', padding: '0.5rem 1rem', borderRadius: '30px', border: '1px solid var(--glass-border)', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <Calendar size={18} className="text-primary" /> <span style={{ fontWeight: 'bold' }}>{new Date(0, filterMonth - 1).toLocaleString('en', {month: 'long'})} {filterYear}</span>
-             </div>
+          <div style={{ display: 'flex', gap: '0.8rem', flexWrap: 'wrap' }}>
+             <button onClick={() => setActiveTab('finances')} className="btn-ghost" style={{ background: 'var(--glass)', borderColor: 'var(--glass-border)', padding: '0.5rem 1.2rem', borderRadius: '30px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <Calendar size={18} className="text-primary" /> <span style={{ fontWeight: 'bold' }}>{currentMonthName} {filterYear}</span>
+             </button>
              {isAccountant && (
-               <button onClick={exportToCSV} className="btn-ghost" style={{ borderRadius: '30px', padding: '0.5rem 1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                 <Download size={18} /> Export Report
-               </button>
+               <>
+                 <input type="file" ref={importInputRef} onChange={handleImportCSV} style={{ display: 'none' }} accept=".csv" />
+                 <button onClick={() => importInputRef.current?.click()} className="btn-ghost" style={{ borderRadius: '30px', padding: '0.5rem 1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <Upload size={18} /> {importing ? 'Importing...' : 'Import Records'}
+                 </button>
+                 <button onClick={exportToCSV} className="btn-ghost" style={{ borderRadius: '30px', padding: '0.5rem 1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <Download size={18} /> Export Report
+                 </button>
+               </>
              )}
           </div>
         </div>
@@ -203,9 +232,9 @@ const HeadPastorDashboard = () => {
            <div className="premium-card" style={{ position: 'relative', overflow: 'hidden' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '1.5rem' }}>
                 <div>
-                   <DollarSign className="text-primary" style={{ marginBottom: '10px' }} />
+                   <div style={{ color: 'var(--primary)', fontWeight: 'bold', fontSize: '1.2rem', marginBottom: '5px' }}>{PESO}</div>
                    <p style={{ color: 'var(--text-dim)', fontSize: '0.75rem', margin: 0 }}>MINISTRY GOAL PROGRESS</p>
-                   <div style={{ fontSize: '2rem', fontWeight: 'bold' }}>₱{totalTithes.toLocaleString()}</div>
+                   <div style={{ fontSize: '2rem', fontWeight: 'bold' }}>{PESO}{totalTithes.toLocaleString()}</div>
                 </div>
                 <div style={{ textAlign: 'right' }}>
                    <div style={{ color: 'var(--primary)', fontWeight: 'bold', fontSize: '1.2rem' }}>{Math.round(goalProgress)}%</div>
@@ -223,7 +252,7 @@ const HeadPastorDashboard = () => {
                  {Object.entries(breakdown).filter(([_, val]) => val > 0).map(([key, val]) => (
                     <div key={key} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
                        <span style={{ opacity: 0.6 }}>{key}</span>
-                       <span style={{ fontWeight: 'bold' }}>₱{val.toLocaleString()}</span>
+                       <span style={{ fontWeight: 'bold' }}>{PESO}{val.toLocaleString()}</span>
                     </div>
                  ))}
                  {Object.values(breakdown).every(v => v === 0) && <p style={{ opacity: 0.3, fontSize: '0.8rem' }}>No categorized funds yet.</p>}
@@ -243,15 +272,11 @@ const HeadPastorDashboard = () => {
               <h3 className="font-serif" style={{ marginBottom: '1.5rem' }}>Live Ministry Feed</h3>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                  {activityFeed.map(feed => (
-                   <div key={feed.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '1.2rem', background: 'rgba(255,255,255,0.02)', borderRadius: '15px', border: '1px solid rgba(255,255,255,0.05)' }}>
-                     <div>
-                       <CheckCircle2 size={16} style={{ color: '#2ecc71', marginRight: '10px' }} />
-                       <span><b>{feed.userName}</b> presence verified at <b>{feed.service}</b></span>
-                     </div>
+                   <div key={feed.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '1.2rem', background: 'rgba(255,255,255,0.02)', borderRadius: '15px' }}>
+                     <div><CheckCircle2 size={16} style={{ color: '#2ecc71', marginRight: '10px' }} /> <span><b>{feed.userName}</b> verified at <b>{feed.service}</b></span></div>
                      <span style={{ color: 'var(--text-dim)', fontSize: '0.8rem' }}>{feed.timestamp?.toDate().toLocaleTimeString()}</span>
                    </div>
                  ))}
-                 {activityFeed.length === 0 && <div style={{ padding: '3rem', textAlign: 'center', opacity: 0.3 }}>Monitoring church activity...</div>}
               </div>
            </div>
         )}
@@ -262,76 +287,46 @@ const HeadPastorDashboard = () => {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
                  <div>
                     <h2 className="font-serif">Accounting Ledger</h2>
-                    <p style={{ color: 'var(--text-dim)', fontSize: '0.9rem' }}>
-                       {isAccountant ? "Access Level: FULL RECORDING (Accountant)" : "Access Level: VERIFICATION GRID (Head Pastor)"}
-                    </p>
+                    <p style={{ color: 'var(--text-dim)', fontSize: '0.9rem' }}>{isAccountant ? "Access Level: FULL RECORDING (Accountant)" : "Access Level: VERIFICATION GRID (Head Pastor)"}</p>
                  </div>
-                 {isAccountant && (
-                    <button onClick={() => setShowAddTithe(true)} className="btn-primary" style={{ padding: '0.8rem 2rem' }}><Plus size={18} /> Record New Entry</button>
-                 )}
+                 {isAccountant && <button onClick={() => setShowAddTithe(true)} className="btn-primary" style={{ padding: '0.8rem 2rem' }}><Plus size={18} /> Record New Entry</button>}
               </div>
 
-              {/* Filters */}
               <div className="premium-card" style={{ padding: '1.5rem', marginBottom: '2rem', display: 'flex', gap: '1.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
-                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <Filter size={16} className="text-primary" /> <span style={{ fontSize: '0.8rem', fontWeight: 'bold', letterSpacing: '1px' }}>FILTERS:</span>
-                 </div>
                  <select value={filterMonth} onChange={(e) => setFilterMonth(e.target.value)} style={{ padding: '0.6rem 1rem', background: '#001a33', color: 'white', borderRadius: '10px', border: '1px solid var(--glass-border)' }}>
                     {[...Array(12)].map((_, i) => <option key={i+1} value={i+1}>{new Date(0, i).toLocaleString('en', {month: 'long'})}</option>)}
                  </select>
                  <input type="number" value={filterYear} onChange={(e) => setFilterYear(e.target.value)} style={{ width: '90px', padding: '0.6rem 1rem', background: '#001a33', color: 'white', borderRadius: '10px', border: '1px solid var(--glass-border)' }} />
                  <select value={filterRole} onChange={(e) => setFilterRole(e.target.value)} style={{ padding: '0.6rem 1rem', background: '#001a33', color: 'white', borderRadius: '10px', border: '1px solid var(--glass-border)' }}>
-                    <option value="all">All Roles</option>
-                    <option value="leader">Leaders</option>
-                    <option value="member">Members</option>
+                    <option value="all">All Roles</option><option value="leader">Leaders</option><option value="member">Members</option>
                  </select>
                  <div style={{ position: 'relative', flex: 1, minWidth: '220px' }}>
-                    <Search style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', opacity: 0.3 }} size={16} />
-                    <input placeholder="Search faithful name..." value={financeSearch} onChange={(e) => setFinanceSearch(e.target.value)} style={{ width: '100%', padding: '0.6rem 1.5rem 0.6rem 35px', background: '#001a33', color: 'white', border: '1px solid var(--glass-border)', borderRadius: '10px' }} />
+                    <Search style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', opacity: 0.3 }} size={16} /><input placeholder="Search faithful name..." value={financeSearch} onChange={(e) => setFinanceSearch(e.target.value)} style={{ width: '100%', padding: '0.6rem 1.5rem 0.6rem 35px', background: '#001a33', color: 'white', border: '1px solid var(--glass-border)', borderRadius: '10px' }} />
                  </div>
               </div>
 
               <div className="premium-card" style={{ padding: 0, overflow: 'hidden' }}>
                  <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                     <thead style={{ background: 'rgba(255,255,255,0.02)', borderBottom: '1px solid var(--glass-border)' }}>
-                       <tr style={{ textAlign: 'left', opacity: 0.5, fontSize: '0.75rem', letterSpacing: '1px' }}>
-                          <th style={{ padding: '1.5rem' }}>NAME</th>
-                          <th>CATEGORY</th>
-                          <th>FUND TYPE</th>
-                          <th style={{ textAlign: 'center' }}>FAITHFUL STATUS</th>
-                          {isAccountant && <th style={{ textAlign: 'right', paddingRight: '1.5rem' }}>AMOUNT (₱)</th>}
+                       <tr style={{ textAlign: 'left', opacity: 0.5, fontSize: '0.75rem' }}>
+                          <th style={{ padding: '1.5rem' }}>NAME</th><th>ROLE</th><th>FUND TYPE</th><th style={{ textAlign: 'center' }}>STATUS</th>{isAccountant && <th style={{ textAlign: 'right', paddingRight: '1.5rem' }}>AMOUNT ({PESO})</th>}
                        </tr>
                     </thead>
                     <tbody>
                        {filteredFinance.map(record => (
-                         <tr key={record.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.02)', background: record.recordedBy === 'auto' ? 'rgba(242,153,0,0.02)' : 'transparent' }}>
+                         <tr key={record.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.02)' }}>
                             <td style={{ padding: '1.2rem 1.5rem' }}><b>{record.name}</b></td>
-                            <td><span style={{ fontSize: '0.7rem', background: 'rgba(255,255,255,0.05)', padding: '4px 10px', borderRadius: '20px', textTransform: 'uppercase' }}>{record.role}</span></td>
+                            <td><span style={{ fontSize: '0.7rem', opacity: 0.6 }}>{record.role?.toUpperCase()}</span></td>
                             <td><span style={{ fontSize: '0.7rem', color: 'var(--primary)', fontWeight: 'bold' }}>{record.fundType?.toUpperCase()}</span></td>
-                            <td style={{ textAlign: 'center' }}>
-                               <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: '#2ecc71', fontWeight: 'bold', fontSize: '1rem' }}>
-                                  <CheckCircle2 size={18} /> Verified
-                               </div>
-                            </td>
-                            {isAccountant && (
-                               <td style={{ textAlign: 'right', paddingRight: '1.5rem', fontWeight: '900', fontSize: '1.1rem', color: '#4caf50' }}>
-                                  ₱{record.amount.toLocaleString()}
-                                </td>
-                            )}
+                            <td style={{ textAlign: 'center' }}><div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: '#2ecc71', fontWeight: 'bold' }}><CheckCircle2 size={18} /> Verified</div></td>
+                            {isAccountant && <td style={{ textAlign: 'right', paddingRight: '1.5rem', fontWeight: '900', fontSize: '1.1rem', color: '#4caf50' }}>{PESO}{record.amount.toLocaleString()}</td>}
                          </tr>
                        ))}
-                       {filteredFinance.length === 0 && (
-                          <tr><td colSpan={isAccountant ? 5 : 4} style={{ padding: '5rem', textAlign: 'center', color: 'var(--text-dim)' }}>
-                            <AlertCircle size={40} style={{ margin: '0 auto 15px', opacity: 0.2 }} />
-                            No church records found for this period.
-                          </td></tr>
-                       )}
                     </tbody>
                  </table>
               </div>
            </div>
         )}
-
       </div>
     </div>
   );
