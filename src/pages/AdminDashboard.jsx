@@ -4,7 +4,7 @@ import { collection, query, onSnapshot, doc, updateDoc, addDoc, serverTimestamp,
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { 
   Users, PlusCircle, Search, Filter, Trash2, 
-  Settings, Scan, CheckCircle2, X, Plus, Calendar, User, Camera, Save, Activity, BarChart3, Clock, Printer
+  Settings, Scan, CheckCircle2, X, Plus, Calendar, User, Camera, Save, Activity, BarChart3, Clock, Printer, Edit3
 } from 'lucide-react';
 import { QRCodeCanvas } from 'qrcode.react';
 import { useAuth } from '../App';
