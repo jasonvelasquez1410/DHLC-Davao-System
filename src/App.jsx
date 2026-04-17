@@ -135,9 +135,9 @@ const Navbar = () => {
             <Link to="/cloud" className="nav-link" style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
               <Cloud size={16} /> Cloud Drive
             </Link>
+            <Link to="/member" className="nav-link" style={{ display: 'flex', alignItems: 'center', gap: '5px' }}><User size={16} /> My Profile</Link>
             {user.role === 'admin' && <Link to="/admin" className="nav-link">Admin Panel</Link>}
             {user.role === 'leader' && <Link to="/leader" className="nav-link">Leader Portal</Link>}
-            {user.role === 'member' && <Link to="/member" className="nav-link">Account</Link>}
             {(user.role === 'head_pastor' || user.role === 'accountant' || user.role === 'admin') && (
               <>
                 <Link to="/documents" className="nav-link">Records</Link>
