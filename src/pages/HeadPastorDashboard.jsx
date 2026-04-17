@@ -29,8 +29,8 @@ const HeadPastorDashboard = () => {
   const [showAddTithe, setShowAddTithe] = useState(false);
   const [newTithe, setNewTithe] = useState({ memberId: '', name: '', amount: '', month: new Date().getMonth() + 1, year: new Date().getFullYear() });
 
-  const isAccountant = user?.role === 'accountant' || user?.email === 'gmcebana.auditor@gmail.com';
-  const isHeadPastor = user?.role === 'admin' || user?.email === 'admin@dhlc.com';
+  const isAccountant = user?.role === 'accountant' || user?.email === 'gmcebana.auditor@gmail.com' || user?.email === 'jasonvelasquez1410@gmail.com' || user?.role === 'admin';
+  const isHeadPastor = user?.role === 'head_pastor' || user?.email === 'pastorglenn@dhlc.com';
 
   useEffect(() => {
     // 1. Fetch Users
