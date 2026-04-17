@@ -99,14 +99,14 @@ const CloudDrive = () => {
       await addDoc(collection(db, 'resources'), {
         name: file.name,
         type: file.name.split('.').pop().toLowerCase(),
-        category: 'resources',
+        category: activeCategory === 'all' ? 'resources' : activeCategory,
         owner: user.name,
         date: 'Just now',
         size: (file.size / (1024 * 1024)).toFixed(2) + ' MB',
         url: downloadURL,
         timestamp: serverTimestamp()
       });
-      alert("Success! Your file is now available in the church drive.");
+      alert(`Success! File uploaded to ${activeCategory === 'all' ? 'resources' : activeCategory}`);
     } catch (err) {
       alert("Error: Storage permissions or quota exceeded.");
     } finally {
@@ -283,9 +283,19 @@ const CloudDrive = () => {
                    </tbody>
                 </table>
                 {filteredResources.length === 0 && !loading && (
-                   <div style={{ padding: '5rem', textAlign: 'center', color: 'var(--text-dim)' }}>
-                      <Info size={40} style={{ marginBottom: '1rem', opacity: 0.2 }} />
-                      <p>Church drive is currently empty.</p>
+                   <div style={{ padding: '7rem 2rem', textAlign: 'center', color: 'var(--text-dim)' }}>
+                      <Info size={48} style={{ marginBottom: '1.5rem', opacity: 0.1 }} />
+                      <h3 style={{ color: 'white', marginBottom: '0.5rem' }}>This folder is currently empty</h3>
+                      <p style={{ marginBottom: '2.5rem' }}>Be the first to share ministry materials in <span className="text-primary" style={{ fontWeight: 'bold' }}>{activeCategory}</span>.</p>
+                      {isLeader && (
+                         <button 
+                           onClick={() => fileInputRef.current?.click()}
+                           className="btn-primary animate-pulse" 
+                           style={{ padding: '1rem 2rem', fontSize: '1rem' }}
+                         >
+                           <Upload size={20} /> Upload to {activeCategory.charAt(0).toUpperCase() + activeCategory.slice(1)}
+                         </button>
+                      )}
                    </div>
                 )}
              </div>
