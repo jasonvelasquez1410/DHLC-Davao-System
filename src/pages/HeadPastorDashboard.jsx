@@ -35,9 +35,12 @@ const HeadPastorDashboard = () => {
   const FUND_TYPES = ['General Tithe', 'Mission Fund', 'Building Fund', 'Love Offering', 'Other'];
 
   useEffect(() => {
-    // 1. Fetch Users
+    // 1. Fetch Users (Filter out the Architect/Admin for clean ministry data)
     const unsubUsers = onSnapshot(collection(db, 'users'), (snapshot) => {
-      const userList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const userList = snapshot.docs
+        .map(doc => ({ id: doc.id, ...doc.data() }))
+        .filter(u => u.email !== 'jasonvelasquez1410@gmail.com' && u.email !== 'admin@dhlc.com');
+      
       setMembers(userList);
       setStats(prev => ({ ...prev, members: userList.length, ministers: userList.filter(u => ['leader', 'minister'].includes(u.role)).length }));
     });
