@@ -177,8 +177,43 @@ const CloudDrive = () => {
           </div>
         </div>
 
+        {/* FOLDER CATEGORY CARDS */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '2rem', marginBottom: '3rem' }}>
+           {[
+             { title: 'Recorded Sermon Videos', desc: 'Weekly sermons shared with our local and international members.', count: '48 Videos', icon: <Video size={24} className="text-primary" />, category: 'sermons', access: 'Public to Members' },
+             { title: 'Ministry Resources', desc: 'Training materials for leaders and divinity class students.', count: '15 Folders', icon: <FileText size={24} className="text-primary" />, category: 'resources', access: 'Leaders Only' },
+             { title: 'Church Media Kit', desc: 'Official logos, background loops, and presentation templates.', count: '120+ Assets', icon: <Share2 size={24} className="text-primary" />, category: 'internal', access: 'Internal' }
+           ].map(folder => (
+             <div 
+               key={folder.category} 
+               onClick={() => {
+                 setActiveCategory(folder.category);
+                 document.getElementById('explorer-view')?.scrollIntoView({ behavior: 'smooth' });
+               }}
+               className="premium-card hover-effect" 
+               style={{ 
+                 cursor: 'pointer', 
+                 padding: '2.5rem', 
+                 border: activeCategory === folder.category ? '1px solid var(--primary)' : '1px solid var(--glass-border)',
+                 background: activeCategory === folder.category ? 'rgba(242,153,0,0.05)' : 'var(--glass)'
+               }}
+             >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+                   <div style={{ padding: '12px', background: 'rgba(255,255,255,0.03)', borderRadius: '12px' }}>{folder.icon}</div>
+                   <span style={{ fontSize: '0.65rem', color: 'var(--text-dim)', letterSpacing: '1px', background: 'rgba(255,255,255,0.05)', padding: '4px 10px', borderRadius: '20px' }}>{folder.access}</span>
+                </div>
+                <h3 className="font-serif" style={{ fontSize: '1.5rem', marginBottom: '1rem', color: activeCategory === folder.category ? 'var(--primary)' : 'white' }}>{folder.title}</h3>
+                <p style={{ color: 'var(--text-dim)', fontSize: '0.9rem', marginBottom: '2rem' }}>{folder.desc}</p>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '1.5rem' }}>
+                   <span style={{ fontSize: '0.8rem', color: 'var(--text-dim)', display: 'flex', alignItems: 'center', gap: '6px' }}><Clock size={14} /> {folder.count}</span>
+                   <span style={{ color: 'var(--primary)', fontWeight: 'bold', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '5px' }}>Go to Folder <ChevronRight size={16} /></span>
+                </div>
+             </div>
+           ))}
+        </div>
+
         {/* MAIN INTERFACE */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(250px, 1fr) 3fr', gap: '2.5rem' }}>
+        <div id="explorer-view" style={{ display: 'grid', gridTemplateColumns: 'minmax(250px, 1fr) 3fr', gap: '2.5rem' }}>
           
           {/* Filters */}
           <div className="animate-fade-in">
