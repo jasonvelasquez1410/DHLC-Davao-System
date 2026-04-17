@@ -13,7 +13,8 @@ import Documents from './pages/Documents';
 
 import { auth, db } from './lib/firebase';
 import { onAuthStateChanged, signOut as firebaseSignOut } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { getMessaging, getToken } from 'firebase/messaging';
 
 // --- Auth Context ---
 const AuthContext = createContext(null);
@@ -25,14 +26,35 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
-        // Fetch additional user data from Firestore
+        // --- Fetch Profile ---
         const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
+        let userData;
         if (userDoc.exists()) {
-          setUser({ uid: firebaseUser.uid, ...userDoc.data() });
+          userData = { uid: firebaseUser.uid, ...userDoc.data() };
         } else {
-          // Default for new users without document yet
-          setUser({ uid: firebaseUser.uid, email: firebaseUser.email, role: 'member', name: firebaseUser.displayName || 'Member' });
+          userData = { uid: firebaseUser.uid, email: firebaseUser.email, role: 'member', name: firebaseUser.displayName || 'Member' };
         }
+        setUser(userData);
+
+        // --- Setup Notifications (FCM) ---
+        const requestPermission = async () => {
+          try {
+            const permission = await Notification.requestPermission();
+            if (permission === 'granted') {
+              const messaging = getMessaging();
+              const token = await getToken(messaging, { 
+                vapidKey: 'BNoo-NlyhFzREpZpxT6yF8xKqMsk1pXz-uU6X7Gf7B_hI' // Generic/Public key placeholder
+              });
+              if (token) {
+                console.log('FCM Token Generated:', token);
+                await setDoc(doc(db, 'users', firebaseUser.uid), { fcmToken: token }, { merge: true });
+              }
+            }
+          } catch (err) {
+            console.error('Notification Setup Error:', err);
+          }
+        };
+        requestPermission();
       } else {
         setUser(null);
       }
@@ -119,7 +141,7 @@ const Navbar = () => {
             {(user.role === 'head_pastor' || user.role === 'accountant' || user.role === 'admin') && (
               <>
                 <Link to="/documents" className="nav-link">Records</Link>
-                <Link to="/command-center" className="nav-link" style={{color: 'var(--primary)', fontWeight: 'bold'}}>Command Center</Link>
+                <Link to="/command-center" className="nav-link" style={{color: 'var(--primary)', fontWeight: 'bold'}}>Leadership Hub</Link>
               </>
             )}
             <div style={{ marginRight: '1rem', color: 'var(--text-dim)', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '5px' }}>

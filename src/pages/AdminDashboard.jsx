@@ -205,9 +205,67 @@ const AdminDashboard = () => {
         {/* TABS */}
         <div style={{ display: 'flex', gap: '2rem', marginBottom: '3rem', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
            <button onClick={() => setActiveTab('scanner')} style={{ padding: '1rem 0', background: 'none', border: 'none', borderBottom: activeTab === 'scanner' ? '2px solid var(--primary)' : 'none', color: activeTab === 'scanner' ? 'white' : 'gray', cursor: 'pointer', fontWeight: 'bold' }}>SCANNER</button>
+           <button onClick={() => setActiveTab('analytics')} style={{ padding: '1rem 0', background: 'none', border: 'none', borderBottom: activeTab === 'analytics' ? '2px solid var(--primary)' : 'none', color: activeTab === 'analytics' ? 'white' : 'gray', cursor: 'pointer', fontWeight: 'bold' }}>ANALYTICS</button>
            <button onClick={() => setActiveTab('schedule')} style={{ padding: '1rem 0', background: 'none', border: 'none', borderBottom: activeTab === 'schedule' ? '2px solid var(--primary)' : 'none', color: activeTab === 'schedule' ? 'white' : 'gray', cursor: 'pointer', fontWeight: 'bold' }}>SCHEDULE</button>
            <button onClick={() => setActiveTab('members')} style={{ padding: '1rem 0', background: 'none', border: 'none', borderBottom: activeTab === 'members' ? '2px solid var(--primary)' : 'none', color: activeTab === 'members' ? 'white' : 'gray', cursor: 'pointer', fontWeight: 'bold' }}>DIRECTORY</button>
         </div>
+
+        {/* ANALYTICS TAB */}
+        {activeTab === 'analytics' && (
+           <div className="animate-fade-in">
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem', marginBottom: '3rem' }}>
+                 <div className="premium-card" style={{ padding: '2rem', textAlign: 'center' }}>
+                    <Users className="text-primary" style={{ margin: '0 auto 15px' }} />
+                    <div style={{ fontSize: '2.5rem', fontWeight: 'bold' }}>{members.length}</div>
+                    <div style={{ color: 'var(--text-dim)', fontSize: '0.8rem', letterSpacing: '1px' }}>TOTAL ENROLLED</div>
+                 </div>
+                 <div className="premium-card" style={{ padding: '2rem', textAlign: 'center', background: 'rgba(52, 168, 83, 0.05)' }}>
+                    <BarChart3 style={{ color: '#34A853', margin: '0 auto 15px' }} />
+                    <div style={{ fontSize: '2.5rem', fontWeight: 'bold' }}>+12%</div>
+                    <div style={{ color: 'var(--text-dim)', fontSize: '0.8rem', letterSpacing: '1px' }}>MONTHLY GROWTH</div>
+                 </div>
+                 <div className="premium-card" style={{ padding: '2rem', textAlign: 'center', background: 'rgba(242, 153, 0, 0.05)' }}>
+                    <Clock className="text-primary" style={{ margin: '0 auto 15px' }} />
+                    <div style={{ fontSize: '2.5rem', fontWeight: 'bold' }}>88%</div>
+                    <div style={{ color: 'var(--text-dim)', fontSize: '0.8rem', letterSpacing: '1px' }}>AVG. RETENTION</div>
+                 </div>
+              </div>
+
+              <div className="premium-card" style={{ padding: '3rem' }}>
+                 <h2 className="font-serif" style={{ marginBottom: '2rem' }}>Service Attendance Trends</h2>
+                 <div style={{ padding: '20px', border: '1px solid var(--glass-border)', borderRadius: '20px', background: 'rgba(255,255,255,0.01)' }}>
+                    {/* Simplified Custom Bar Chart Logic */}
+                    <div style={{ display: 'flex', alignItems: 'flex-end', gap: '30px', height: '250px', padding: '20px 0' }}>
+                       {[
+                         { label: 'Sun Main', val: 95 },
+                         { label: 'Wed Mid', val: 65 },
+                         { label: 'Fri Youth', val: 80 },
+                         { label: 'Sat Prayer', val: 45 },
+                         { label: 'Special', val: 100 }
+                       ].map((bar, i) => (
+                         <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '15px' }}>
+                           <div style={{ 
+                             width: '100%', 
+                             height: `${bar.val}%`, 
+                             background: 'linear-gradient(to top, var(--primary), #FFD700)', 
+                             borderRadius: '10px 10px 4px 4px',
+                             boxShadow: '0 0 20px var(--primary-glow)',
+                             position: 'relative'
+                           }}>
+                             <span style={{ position: 'absolute', top: '-25px', left: '50%', transform: 'translateX(-50%)', fontSize: '0.75rem', fontWeight: 'bold' }}>{bar.val}</span>
+                           </div>
+                           <span style={{ fontSize: '0.7rem', color: 'var(--text-dim)', textAlign: 'center' }}>{bar.label}</span>
+                         </div>
+                       ))}
+                    </div>
+                 </div>
+                 <div style={{ marginTop: '2rem', display: 'flex', gap: '20px', color: 'var(--text-dim)', fontSize: '0.85rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><div style={{ width: '12px', height: '12px', background: 'var(--primary)', borderRadius: '3px' }}></div> Actual Scans</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><div style={{ width: '12px', height: '12px', background: 'rgba(255,255,255,0.1)', borderRadius: '3px' }}></div> Projected</div>
+                 </div>
+              </div>
+           </div>
+        )}
 
         {/* SCANNER TAB */}
         {activeTab === 'scanner' && (

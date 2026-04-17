@@ -33,16 +33,17 @@ const Login = () => {
     // VIP Global Admin Promotion (Master Admins)
     const adminEmails = [
       'admin@dhlc.com', 
-      'gmcebana.auditor@gmail.com',
       'jason.velasquez1410@gmail.com',
       'jasonvelasquez1410@gmail.com'
     ];
     
-    // VIP Leadership List (Add Leader emails here for auto-promotion)
+    const accountantEmails = ['gmcebana.auditor@gmail.com'];
     const vipLeaders = ['regieglenn@gmail.com']; 
 
     if (adminEmails.includes(email)) {
       role = 'admin';
+    } else if (accountantEmails.includes(email)) {
+      role = 'accountant';
     } else if (vipLeaders.includes(email)) {
       role = 'leader';
     }
@@ -86,18 +87,23 @@ const Login = () => {
     } catch (err) {
       console.error("Full Google Sign-in Error:", err);
       
-      if (err.code === 'auth/popup-closed-by-user') {
-        setError('Sign-in cancelled. Please keep the window open to login.');
-      } else if (err.code === 'auth/cancelled-popup-request') {
-        setError('Sign-in request was cancelled. Please try again.');
-      } else if (err.code === 'auth/unauthorized-domain') {
-        setError('This domain is not authorized for Google Sign-in. Please contact admin to add it to Firebase "Authorized Domains".');
-      } else if (err.code === 'auth/popup-blocked') {
+      const errorCode = err.code || 'unknown';
+      const errorMessage = err.message || 'Please try again.';
+
+      if (errorCode === 'auth/popup-closed-by-user') {
+        setError('Sign-in cancelled. Please keep the popup window open.');
+      } else if (errorCode === 'auth/cancelled-popup-request') {
+        setError('Multiple sign-in attempts detected. Please try again.');
+      } else if (errorCode === 'auth/unauthorized-domain') {
+        setError(`Domain Unauthorized: Add "${window.location.hostname}" to Firebase Console > Authentication > Settings > Authorized Domains.`);
+      } else if (errorCode === 'auth/popup-blocked') {
         setError('Sign-in popup was blocked. Please allow popups for this site.');
-      } else if (err.code === 'auth/operation-not-allowed') {
-        setError('Google Sign-in is not enabled in Firebase Console. Please enable it under Authentication > Sign-in Method.');
+      } else if (errorCode === 'auth/operation-not-allowed') {
+        setError('Google Sign-in is not enabled in Firebase Console (Sign-in Method tab).');
+      } else if (errorCode === 'auth/internal-error') {
+        setError('Firebase Internal Error. Check your internet connection or Firebase Console status.');
       } else {
-        setError(`Google Sign-in failed: ${err.message || 'Please try again.'}`);
+        setError(`Google Sign-in failed (${errorCode}): ${errorMessage}`);
       }
     } finally {
       setLoading(false);

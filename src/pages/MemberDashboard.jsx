@@ -1,21 +1,25 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../lib/firebase';
-import { collection, query, where, getDocs, orderBy, limit, doc, setDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
 import { useAuth } from '../App';
+import { 
+  User, Award, Calendar, Clock, ShieldCheck, 
+  ArrowRight, Download, Scan, CheckCircle2, 
+  Star, Zap, Activity, QrCode
+} from 'lucide-react';
 import { QRCodeCanvas } from 'qrcode.react';
-import { User, Mail, Award, Calendar, ExternalLink, QrCode } from 'lucide-react';
-import { Link } from 'react-router-dom';
 
 const MemberDashboard = () => {
   const { user } = useAuth();
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [editingProfile, setEditingProfile] = useState(false);
-  const [profileData, setProfileData] = useState({
-    name: user?.name || '',
-    phone: user?.phone || '',
-    family: user?.family || ''
-  });
+
+  // Sample progress data - can be linked to Firestore later
+  const progressItems = [
+    { title: 'Foundations of Faith', status: 'completed', date: 'Mar 12, 2026' },
+    { title: 'Divinity Level 1', status: 'in-progress', percent: 65 },
+    { title: 'Ministry Training', status: 'locked' }
+  ];
 
   useEffect(() => {
     const fetchHistory = async () => {
@@ -25,7 +29,7 @@ const MemberDashboard = () => {
           collection(db, 'attendance'), 
           where('userId', '==', user.uid),
           orderBy('timestamp', 'desc'),
-          limit(10)
+          limit(5)
         );
         const snap = await getDocs(q);
         setHistory(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
@@ -44,108 +48,121 @@ const MemberDashboard = () => {
     const pngUrl = canvas.toDataURL("image/png").replace("image/png", "image/octet-stream");
     let downloadLink = document.createElement("a");
     downloadLink.href = pngUrl;
-    downloadLink.download = `${(user?.name || 'Member').replace(/\s+/g, '_')}_DHLC_ID.png`;
+    downloadLink.download = `${user?.name || 'Member'}_DHLC_ID.png`;
     document.body.appendChild(downloadLink);
     downloadLink.click();
     document.body.removeChild(downloadLink);
   };
 
-  if (!user) return <div style={{ color: 'white', paddingTop: '150px', textAlign: 'center' }}>Please sign in to view your dashboard.</div>;
-
   return (
-    <div className="container" style={{ paddingTop: '120px', paddingBottom: '60px', color: 'white' }}>
-      <div className="animate-fade-in">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '3rem', flexWrap: 'wrap', gap: '1rem' }}>
-          <div>
-            <h1 className="font-serif" style={{ fontSize: '3rem' }}>Member <span className="text-gradient">Portal</span></h1>
-            <p style={{ color: 'var(--text-dim)' }}>Welcome back, {user.name}. View your digital ID and attendance history.</p>
-          </div>
-          <div style={{ padding: '0.8rem 1.5rem', background: 'rgba(242, 153, 0, 0.1)', borderRadius: '15px', border: '1px solid var(--primary)' }}>
-             <span style={{ color: 'var(--primary)', fontWeight: 'bold' }}>Active Member</span>
-          </div>
-        </div>
-
-        {/* PROFILE SECTION */}
-        <div className="premium-card" style={{ marginBottom: '2rem' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-            <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <User size={20} color="var(--primary)" /> Profile Details
-            </h3>
-            <button className="btn-ghost" onClick={() => setEditingProfile(!editingProfile)} style={{ padding: '0.5rem 1rem' }}>
-               {editingProfile ? 'Cancel' : 'Edit Profile'}
-            </button>
-          </div>
-
-          {editingProfile ? (
-            <form onSubmit={async (e) => {
-              e.preventDefault();
-              try {
-                const userRef = doc(db, 'users', user.uid);
-                await setDoc(userRef, profileData, { merge: true });
-                setEditingProfile(false);
-                alert("Profile Updated!");
-              } catch (err) { alert("Error saving."); }
-            }} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
-                <input type="text" value={profileData.name} onChange={(e) => setProfileData({...profileData, name: e.target.value})} placeholder="Full Name" style={{ padding: '0.8rem', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', borderRadius: '8px' }} />
-                <input type="text" value={profileData.phone} onChange={(e) => setProfileData({...profileData, phone: e.target.value})} placeholder="Phone Number" style={{ padding: '0.8rem', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', borderRadius: '8px' }} />
-              </div>
-              <button type="submit" className="btn-primary" style={{ width: 'fit-content', padding: '0.6rem 2rem' }}>Save Changes</button>
-            </form>
-          ) : (
-            <div style={{ display: 'flex', gap: '3rem', flexWrap: 'wrap', opacity: 0.8 }}>
-               <div><p style={{ fontSize: '0.7rem', color: 'var(--primary)', margin: 0 }}>FULL NAME</p><p style={{ fontWeight: 'bold' }}>{user.name}</p></div>
-               <div><p style={{ fontSize: '0.7rem', color: 'var(--primary)', margin: 0 }}>EMAIL ADDRESS</p><p style={{ fontWeight: 'bold' }}>{user.email}</p></div>
-               <div><p style={{ fontSize: '0.7rem', color: 'var(--primary)', margin: 0 }}>PHONE</p><p style={{ fontWeight: 'bold' }}>{user.phone || 'Not set'}</p></div>
-            </div>
-          )}
-        </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}>
+    <div className="hero" style={{ paddingTop: '100px', display: 'block', minHeight: '100vh' }}>
+      <div className="container" style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 20px' }}>
+        
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '2.5rem' }}>
           
-          {/* QR CODE ID CARD */}
-          <div className="premium-card" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', background: 'linear-gradient(135deg, rgba(242,153,0,0.05), transparent)' }}>
-            <div style={{ width: '60px', height: '60px', background: 'var(--primary)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.5rem', boxShadow: '0 10px 30px rgba(242,153,0,0.3)' }}>
-               <QrCode color="black" size={30} />
+          {/* Left Column: ID & Profile */}
+          <div className="animate-fade-in">
+            <div className="premium-card" style={{ textAlign: 'center', padding: '3rem 2rem', position: 'relative' }}>
+               <div style={{ position: 'absolute', top: '1.5rem', right: '1.5rem' }}>
+                  <ShieldCheck className="text-primary" size={24} />
+               </div>
+               
+               <div style={{ 
+                 width: '120px', 
+                 height: '120px', 
+                 borderRadius: '50%', 
+                 border: '4px solid var(--primary)', 
+                 margin: '0 auto 1.5rem',
+                 padding: '5px',
+                 boxShadow: '0 0 30px var(--primary-glow)'
+               }}>
+                 <img 
+                   src={user?.photoURL || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=200&q=80'} 
+                   alt="Profile" 
+                   style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} 
+                 />
+               </div>
+
+               <h1 className="font-serif" style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>{user?.name || 'Vibrant Member'}</h1>
+               <p style={{ color: 'var(--primary)', fontWeight: 'bold', letterSpacing: '2px', fontSize: '0.9rem', marginBottom: '2rem' }}>
+                 {user?.role?.toUpperCase() || 'MEMBER'}
+               </p>
+
+               {/* Digital QR ID Section */}
+               <div style={{ background: 'rgba(255,255,255,0.02)', borderRadius: '24px', padding: '2rem', border: '1px solid var(--glass-border)', marginBottom: '2rem' }}>
+                  <p style={{ fontSize: '0.75rem', color: 'var(--text-dim)', marginBottom: '1.5rem', fontWeight: 'bold' }}>SCAN FOR SERVICE ATTENDANCE</p>
+                  <div style={{ background: 'white', padding: '1rem', borderRadius: '15px', display: 'inline-block', boxShadow: '0 0 40px rgba(0,0,0,0.5)' }}>
+                    <QRCodeCanvas id="qr-canvas" value={user?.uid || 'no-id'} size={160} />
+                  </div>
+                  <div style={{ marginTop: '1.5rem', display: 'flex', gap: '10px', justifyContent: 'center' }}>
+                     <button className="btn-primary" style={{ fontSize: '0.85rem', padding: '10px 20px', width: '100%' }} onClick={downloadQR}>
+                        <Download size={16} /> DOWNLOAD DIGITAL ID
+                     </button>
+                  </div>
+               </div>
             </div>
-            <h2 className="font-serif">Attendance QR</h2>
-            <p style={{ color: 'var(--text-dim)', fontSize: '0.9rem', marginBottom: '2rem' }}>Show this code to the attendant upon entry.</p>
-            
-            <div style={{ background: 'white', padding: '1.2rem', borderRadius: '20px', boxShadow: '0 20px 40px rgba(0,0,0,0.5)' }}>
-               <QRCodeCanvas id="qr-canvas" value={user.uid} size={180} />
-            </div>
-            
-            <button onClick={downloadQR} className="btn-primary" style={{ marginTop: '2rem', width: '100%' }}>Download Digital ID</button>
           </div>
 
-          {/* ATTENDANCE HISTORY */}
-          <div className="premium-card">
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-                 <h3 style={{ margin: 0 }}>My History</h3>
-                 <span style={{ fontSize: '0.8rem', opacity: 0.5 }}>Last 10 Records</span>
-              </div>
-              
-              {history.length > 0 ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                   {history.map(record => (
-                     <div key={record.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '1rem', background: 'rgba(255,255,255,0.02)', borderRadius: '15px', border: '1px solid rgba(255,255,255,0.05)' }}>
-                        <div>
-                           <p style={{ fontWeight: 'bold', margin: '0 0 0.2rem 0' }}>{record.service}</p>
-                           <p style={{ fontSize: '0.75rem', opacity: 0.5 }}>Davao Sanctuary</p>
-                        </div>
-                        <div style={{ textAlign: 'right' }}>
-                           <p style={{ color: '#2ecc71', fontWeight: 'bold', fontSize: '0.75rem' }}>PRESENT</p>
-                           <p style={{ fontSize: '0.75rem', opacity: 0.5 }}>{record.timestamp?.toDate().toLocaleDateString()}</p>
-                        </div>
-                     </div>
-                   ))}
+          {/* Right Column: Mission Progress & Activity */}
+          <div className="animate-fade-in" style={{ animationDelay: '0.2s' }}>
+            <h2 className="font-serif" style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <Zap className="text-primary" /> Mission Progress
+            </h2>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
+              {progressItems.map((item, idx) => (
+                <div key={idx} className="premium-card hover-effect" style={{ padding: '1.2rem 1.5rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: item.percent ? '1rem' : '0' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      {item.status === 'completed' ? <CheckCircle2 className="text-green-400" size={20} /> : 
+                       item.status === 'locked' ? <ShieldCheck style={{ opacity: 0.3 }} size={20} /> :
+                       <Activity className="text-primary" size={20} />}
+                      <span style={{ fontWeight: '600', opacity: item.status === 'locked' ? 0.3 : 1 }}>{item.title}</span>
+                    </div>
+                    {item.date && <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>{item.date}</span>}
+                  </div>
+                  
+                  {item.percent && (
+                    <div style={{ height: '8px', background: 'rgba(255,255,255,0.05)', borderRadius: '4px', overflow: 'hidden' }}>
+                      <div style={{ width: `${item.percent}%`, height: '100%', background: 'linear-gradient(90deg, var(--primary), #FFB733)', boxShadow: '0 0 15px var(--primary-glow)' }}></div>
+                    </div>
+                  )}
                 </div>
-              ) : (
-                <div style={{ textAlign: 'center', padding: '4rem 0', opacity: 0.3 }}>
-                   <Calendar size={40} style={{ marginBottom: '1rem' }} />
-                   <p>No services attended yet.</p>
-                </div>
-              )}
+              ))}
+            </div>
+
+            {/* Attendance History Segment */}
+            <div className="premium-card" style={{ marginTop: '2.5rem', padding: '1.5rem' }}>
+               <h3 className="font-serif" style={{ marginBottom: '1.2rem', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                 <Clock size={18} className="text-primary" /> Recent Services
+               </h3>
+               {history.length > 0 ? (
+                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+                    {history.map(record => (
+                      <div key={record.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
+                        <span style={{ fontSize: '0.9rem' }}><b>{record.service}</b></span>
+                        <span style={{ fontSize: '0.8rem', color: 'var(--text-dim)' }}>{record.timestamp?.toDate().toLocaleDateString()}</span>
+                      </div>
+                    ))}
+                 </div>
+               ) : (
+                 <p style={{ color: 'var(--text-dim)', fontSize: '0.85rem' }}>No attendance records found yet.</p>
+               )}
+            </div>
+
+            {/* Quick Stats Grid */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.2rem', marginTop: '2rem' }}>
+               <div className="premium-card" style={{ padding: '1.5rem', textAlign: 'center', background: 'rgba(255,255,255,0.02)' }}>
+                  <Calendar className="text-primary" style={{ margin: '0 auto 10px' }} size={24} />
+                  <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>12</div>
+                  <div style={{ fontSize: '0.7rem', color: 'var(--text-dim)', textTransform: 'uppercase' }}>SERVICES</div>
+               </div>
+               <div className="premium-card" style={{ padding: '1.5rem', textAlign: 'center', background: 'rgba(242,153,0,0.05)' }}>
+                  <Star className="text-primary" style={{ margin: '0 auto 10px' }} size={24} />
+                  <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>GOLD</div>
+                  <div style={{ fontSize: '0.7rem', color: 'var(--text-dim)', textTransform: 'uppercase' }}>LEVEL</div>
+               </div>
+            </div>
           </div>
 
         </div>
