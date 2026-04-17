@@ -296,6 +296,13 @@ const AdminDashboard = () => {
                        ))}
                     </tbody>
                  </table>
+                 {events.length === 0 && (
+                    <div style={{ textAlign: 'center', padding: '5rem 0' }}>
+                       <Calendar size={48} style={{ opacity: 0.1, marginBottom: '1.5rem' }} />
+                       <h3 style={{ opacity: 0.5 }}>No church events planned yet.</h3>
+                       <button onClick={() => setShowAddEvent(true)} className="btn-primary" style={{ marginTop: '1.5rem' }}>+ Create First Event</button>
+                    </div>
+                 )}
               </div>
            </div>
         )}

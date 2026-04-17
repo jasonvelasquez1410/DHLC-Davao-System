@@ -33,7 +33,7 @@ const HeadPastorDashboard = () => {
   const isHeadPastor = user?.role === 'admin' || user?.email === 'admin@dhlc.com';
 
   useEffect(() => {
-    // 1. Fetch Users (for the Accountant to select from)
+    // 1. Fetch Users
     const unsubUsers = onSnapshot(collection(db, 'users'), (snapshot) => {
       const userList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setMembers(userList);
@@ -76,7 +76,8 @@ const HeadPastorDashboard = () => {
         verified: true
       });
       setShowAddTithe(false);
-      setNewTithe({ memberId: '', name: '', amount: '', month: 4, year: 2026 });
+      setNewTithe({ memberId: '', name: '', amount: '', month: new Date().getMonth() + 1, year: 2026 });
+      alert("Verification Recorded Successfully!");
     } catch (err) { alert("Error recording tithe."); }
   };
 
@@ -89,7 +90,6 @@ const HeadPastorDashboard = () => {
   });
 
   const totalTithes = filteredFinance.reduce((sum, r) => sum + (r.amount || 0), 0);
-  const displayName = isAccountant ? "Pastora Gladys" : "Pastor Glenn";
 
   return (
     <div className="container" style={{ paddingTop: '120px', paddingBottom: '60px' }}>
@@ -150,6 +150,14 @@ const HeadPastorDashboard = () => {
                     <div style={{ fontSize: '2.5rem', fontWeight: 'bold' }}>{activityFeed.length}</div>
                     <p style={{ color: 'var(--text-dim)', fontSize: '0.8rem' }}>RECENT SCANS</p>
                  </div>
+                 {isAccountant && (
+                    <div className="premium-card" style={{ textAlign: 'center', background: 'rgba(76, 175, 80, 0.05)', border: '1px solid #4caf50' }}>
+                       <DollarSign style={{ color: '#4caf50', margin: '0 auto 15px' }} />
+                       <div style={{ fontSize: '2.5rem', fontWeight: 'bold' }}>₱{totalTithes.toLocaleString()}</div>
+                       <p style={{ color: 'var(--text-dim)', fontSize: '0.8rem' }}>CURRENT MONTH TOTAL</p>
+                       <button onClick={() => setActiveTab('finances')} className="btn-ghost" style={{ marginTop: '10px', color: '#4caf50', fontSize: '0.8rem' }}>Open Ledger ⮕</button>
+                    </div>
+                 )}
               </div>
 
               <div className="premium-card">
@@ -161,6 +169,7 @@ const HeadPastorDashboard = () => {
                         <span style={{ color: 'var(--text-dim)', fontSize: '0.8rem' }}>{feed.timestamp?.toDate().toLocaleTimeString()}</span>
                       </div>
                     ))}
+                    {activityFeed.length ===0 && <p style={{ textAlign: 'center', color: 'var(--text-dim)' }}>No recent check-ins.</p>}
                  </div>
               </div>
            </div>
@@ -199,11 +208,6 @@ const HeadPastorDashboard = () => {
                     <Search style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', opacity: 0.3 }} size={16} />
                     <input placeholder="Search faithful name..." value={financeSearch} onChange={(e) => setFinanceSearch(e.target.value)} style={{ width: '100%', padding: '0.5rem 1rem 0.5rem 30px', background: '#001a33', color: 'white', border: '1px solid var(--glass-border)', borderRadius: '8px' }} />
                  </div>
-                 {isAccountant && (
-                    <div style={{ padding: '0.5rem 1rem', background: 'rgba(76, 175, 80, 0.1)', borderRadius: '10px', color: '#4caf50', fontWeight: 'bold' }}>
-                       MONTH TOTAL: ₱{totalTithes.toLocaleString()}
-                    </div>
-                 )}
               </div>
 
               <div className="premium-card" style={{ padding: 0 }}>
@@ -229,7 +233,7 @@ const HeadPastorDashboard = () => {
                             {isAccountant && (
                                <td style={{ textAlign: 'right', paddingRight: '1.5rem', fontWeight: 'bold', fontSize: '1.1rem', color: '#4caf50' }}>
                                   ₱{record.amount.toLocaleString()}
-                               </td>
+                                </td>
                             )}
                          </tr>
                        ))}
